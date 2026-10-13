@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
 export default function ProductionReportForm({ type, onSaved }) {
@@ -10,15 +10,56 @@ export default function ProductionReportForm({ type, onSaved }) {
   const [rows, setRows] = useState([
     { weaver_name: '', target_saree: '', prod_saree: '', target_noli: '', prod_noli: '' }
   ]);
+  const [savedWeavers, setSavedWeavers] = useState([]);
   const [historyData, setHistoryData] = useState([]);
   const [saving, setSaving] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
 
   const tableName = type === 'saree' ? 'saree_production' : type === 'dopatta' ? 'dopatta_production' : 'tana_production';
 
+  useEffect(() => {
+    fetchWeavers();
+  }, [type]);
+
+  // ডাটাবেজ থেকে পূর্বে সেভ করা weaver-দের নাম এবং তাদের শেষ টার্গেট নিয়ে আসার জন্য
+  const fetchWeavers = async () => {
+    const { data, error } = await supabase
+      .from(tableName)
+      .select('weaver_name, target, noli_target')
+      .order('id', { ascending: false });
+
+    if (!error && data) {
+      const uniqueWeaversMap = new Map();
+      data.forEach(item => {
+        if (item.weaver_name && !uniqueWeaversMap.has(item.weaver_name.trim())) {
+          uniqueWeaversMap.set(item.weaver_name.trim(), {
+            name: item.weaver_name.trim(),
+            target: item.target || '',
+            noli_target: item.noli_target || ''
+          });
+        }
+      });
+      setSavedWeavers(Array.from(uniqueWeaversMap.values()));
+    }
+  };
+
   const handleRowChange = (index, field, value) => {
     const updatedRows = [...rows];
     updatedRows[index][field] = value;
+    setRows(updatedRows);
+  };
+
+  // ড্রপডাউন থেকে তাঁতি সিলেক্ট করলে অটোমেটিক নাম, টার্গেট শাড়ি ও টার্গেট নলি ফিল-আপ হবে
+  const handleSelectWeaver = (index, weaverName) => {
+    const selected = savedWeavers.find(w => w.name === weaverName);
+    const updatedRows = [...rows];
+    if (selected) {
+      updatedRows[index].weaver_name = selected.name;
+      updatedRows[index].target_saree = selected.target;
+      updatedRows[index].target_noli = selected.noli_target;
+    } else {
+      updatedRows[index].weaver_name = weaverName;
+    }
     setRows(updatedRows);
   };
 
@@ -37,7 +78,7 @@ export default function ProductionReportForm({ type, onSaved }) {
       .filter(r => r.weaver_name.trim() !== '')
       .map(r => ({
         date,
-        weaver_name: r.weaver_name,
+        weaver_name: r.weaver_name.trim(),
         target: Number(r.target_saree || 0),
         production: Number(r.prod_saree || 0),
         noli_target: Number(r.target_noli || 0),
@@ -58,6 +99,7 @@ export default function ProductionReportForm({ type, onSaved }) {
     } else {
       alert('Production data saved successfully!');
       setRows([{ weaver_name: '', target_saree: '', prod_saree: '', target_noli: '', prod_noli: '' }]);
+      fetchWeavers(); // সেভ হওয়া নতুন তাঁতির নাম তালিকা আপডেট
       if (onSaved) onSaved();
     }
   };
@@ -106,7 +148,6 @@ export default function ProductionReportForm({ type, onSaved }) {
 
   return (
     <div>
-      {/* Mode Switcher retaining clean original look */}
       <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
         <button onClick={() => setViewMode('entry')} style={{ padding: '8px 16px', backgroundColor: viewMode === 'entry' ? '#1F4E78' : '#e0e0e0', color: viewMode === 'entry' ? 'white' : 'black', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
           ➕ Daily Data Entry
@@ -145,13 +186,20 @@ export default function ProductionReportForm({ type, onSaved }) {
                   <tr key={index}>
                     <td>{index + 1}</td>
                     <td>
+                      {/* Dynamic Search & Auto-complete input */}
                       <input 
                         type="text" 
+                        list={`weaver-list-${index}`}
                         placeholder="Type or select name" 
                         value={row.weaver_name} 
-                        onChange={(e) => handleRowChange(index, 'weaver_name', e.target.value)} 
-                        style={{ width: '100%', padding: '4px', boxSizing: 'border-box' }}
+                        onChange={(e) => handleSelectWeaver(index, e.target.value)} 
+                        style={{ width: '100%', padding: '6px', boxSizing: 'border-box' }}
                       />
+                      <datalist id={`weaver-list-${index}`}>
+                        {savedWeavers.map((w, i) => (
+                          <option key={i} value={w.name}>{w.name}</option>
+                        ))}
+                      </datalist>
                     </td>
                     <td><input type="number" value={row.target_saree} onChange={(e) => handleRowChange(index, 'target_saree', e.target.value)} style={{ width: '80px', padding: '4px' }} /></td>
                     <td><input type="number" value={row.prod_saree} onChange={(e) => handleRowChange(index, 'prod_saree', e.target.value)} style={{ width: '80px', padding: '4px' }} /></td>
