@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
 export default function ProductionReportForm({ type, onSaved }) {
@@ -45,7 +45,7 @@ export default function ProductionReportForm({ type, onSaved }) {
       }));
 
     if (insertData.length === 0) {
-      alert('At least 1 row fill up korun!');
+      alert('Please fill in at least one Weaver Name!');
       setSaving(false);
       return;
     }
@@ -56,7 +56,7 @@ export default function ProductionReportForm({ type, onSaved }) {
     if (error) {
       alert('Error saving data: ' + error.message);
     } else {
-      alert('Data successfully save hoyeche!');
+      alert('Production data saved successfully!');
       setRows([{ weaver_name: '', target_saree: '', prod_saree: '', target_noli: '', prod_noli: '' }]);
       if (onSaved) onSaved();
     }
@@ -77,9 +77,8 @@ export default function ProductionReportForm({ type, onSaved }) {
     }
   };
 
-  // Built-in CSV Excel Export
   const exportExcelCSV = () => {
-    if (historyData.length === 0) return alert('No data to export!');
+    if (historyData.length === 0) return alert('No data available to export!');
     let csvContent = 'data:text/csv;charset=utf-8,Date,Weaver Name,Target,Production,Noli Target,Noli Production\n';
     historyData.forEach(r => {
       csvContent += `${r.date},"${r.weaver_name}",${r.target},${r.production},${r.noli_target},${r.noli_production}\n`;
@@ -87,19 +86,18 @@ export default function ProductionReportForm({ type, onSaved }) {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `${type}_report_${startDate}_to_${endDate}.csv`);
+    link.setAttribute('download', `${type}_production_${startDate}_to_${endDate}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
-  // Browser Native Print / PDF Download
   const exportPDFPrint = () => {
     window.print();
   };
 
   const shareWhatsApp = () => {
-    let msg = `*BRAC Sericulture ${type.toUpperCase()} Report*\nDate: ${startDate} to ${endDate}\n\n`;
+    let msg = `*BRAC Sericulture (${type.toUpperCase()}) Report*\nDate Range: ${startDate} to ${endDate}\n\n`;
     historyData.forEach((d, i) => {
       msg += `${i + 1}. ${d.weaver_name} (${d.date}): Target ${d.target}, Prod ${d.production}\n`;
     });
@@ -107,26 +105,26 @@ export default function ProductionReportForm({ type, onSaved }) {
   };
 
   return (
-    <div style={{ fontFamily: 'Arial, sans-serif' }}>
-      {/* Dynamic Action Mode Selection */}
+    <div>
+      {/* Mode Switcher retaining clean original look */}
       <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-        <button onClick={() => setViewMode('entry')} style={{ flex: 1, padding: '10px', backgroundColor: viewMode === 'entry' ? '#1F4E78' : '#E0E0E0', color: viewMode === 'entry' ? 'white' : 'black', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>
-          📝 Data Entry Mode
+        <button onClick={() => setViewMode('entry')} style={{ padding: '8px 16px', backgroundColor: viewMode === 'entry' ? '#1F4E78' : '#e0e0e0', color: viewMode === 'entry' ? 'white' : 'black', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
+          ➕ Daily Data Entry
         </button>
-        <button onClick={() => { setViewMode('history'); fetchHistory(); }} style={{ flex: 1, padding: '10px', backgroundColor: viewMode === 'history' ? '#1F4E78' : '#E0E0E0', color: viewMode === 'history' ? 'white' : 'black', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>
-          📊 View Previous Records
+        <button onClick={() => { setViewMode('history'); fetchHistory(); }} style={{ padding: '8px 16px', backgroundColor: viewMode === 'history' ? '#1F4E78' : '#e0e0e0', color: viewMode === 'history' ? 'white' : 'black', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
+          📊 View Saved History & Export
         </button>
       </div>
 
       {viewMode === 'entry' ? (
         <div>
           <div style={{ marginBottom: '15px' }}>
-            <label><strong>Entry Date: </strong></label>
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }} />
+            <label><strong>Date: </strong></label>
+            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={{ padding: '6px' }} />
           </div>
 
           <div style={{ overflowX: 'auto' }}>
-            <table border="1" cellPadding="6" style={{ borderCollapse: 'collapse', width: '100%', textAlign: 'center', minWidth: '600px' }}>
+            <table border="1" cellPadding="6" style={{ borderCollapse: 'collapse', width: '100%', textAlign: 'center' }}>
               <thead>
                 <tr style={{ backgroundColor: '#1F4E78', color: 'white' }}>
                   <th rowSpan="2">SL</th>
@@ -152,16 +150,16 @@ export default function ProductionReportForm({ type, onSaved }) {
                         placeholder="Type or select name" 
                         value={row.weaver_name} 
                         onChange={(e) => handleRowChange(index, 'weaver_name', e.target.value)} 
-                        style={{ width: '100%', padding: '6px', boxSizing: 'border-box' }}
+                        style={{ width: '100%', padding: '4px', boxSizing: 'border-box' }}
                       />
                     </td>
-                    <td><input type="number" value={row.target_saree} onChange={(e) => handleRowChange(index, 'target_saree', e.target.value)} style={{ width: '70px', padding: '6px' }} /></td>
-                    <td><input type="number" value={row.prod_saree} onChange={(e) => handleRowChange(index, 'prod_saree', e.target.value)} style={{ width: '70px', padding: '6px' }} /></td>
-                    <td><input type="number" value={row.target_noli} onChange={(e) => handleRowChange(index, 'target_noli', e.target.value)} style={{ width: '70px', padding: '6px' }} /></td>
-                    <td><input type="number" value={row.prod_noli} onChange={(e) => handleRowChange(index, 'prod_noli', e.target.value)} style={{ width: '70px', padding: '6px' }} /></td>
+                    <td><input type="number" value={row.target_saree} onChange={(e) => handleRowChange(index, 'target_saree', e.target.value)} style={{ width: '80px', padding: '4px' }} /></td>
+                    <td><input type="number" value={row.prod_saree} onChange={(e) => handleRowChange(index, 'prod_saree', e.target.value)} style={{ width: '80px', padding: '4px' }} /></td>
+                    <td><input type="number" value={row.target_noli} onChange={(e) => handleRowChange(index, 'target_noli', e.target.value)} style={{ width: '80px', padding: '4px' }} /></td>
+                    <td><input type="number" value={row.prod_noli} onChange={(e) => handleRowChange(index, 'prod_noli', e.target.value)} style={{ width: '80px', padding: '4px' }} /></td>
                     <td>
                       {rows.length > 1 && (
-                        <button onClick={() => removeRow(index)} style={{ backgroundColor: '#D32F2F', color: 'white', border: 'none', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer' }}>❌</button>
+                        <button onClick={() => removeRow(index)} style={{ backgroundColor: '#D32F2F', color: 'white', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}>❌</button>
                       )}
                     </td>
                   </tr>
@@ -170,43 +168,38 @@ export default function ProductionReportForm({ type, onSaved }) {
             </table>
           </div>
 
-          <div style={{ marginTop: '15px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-            <button onClick={addRow} style={{ padding: '10px 18px', backgroundColor: '#0288D1', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>
+          <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
+            <button onClick={addRow} style={{ padding: '8px 16px', backgroundColor: '#0288D1', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>
               ➕ Add Row
             </button>
-            <button onClick={handleSave} disabled={saving} style={{ padding: '10px 18px', backgroundColor: '#2E7D32', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>
+            <button onClick={handleSave} disabled={saving} style={{ padding: '8px 16px', backgroundColor: '#2E7D32', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>
               {saving ? 'Saving...' : '💾 Save Data'}
             </button>
           </div>
         </div>
       ) : (
-        /* History & Date Filtering Mode */
+        /* History View */
         <div>
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', backgroundColor: '#F0F4F8', padding: '12px', borderRadius: '6px', marginBottom: '15px' }}>
-            <div>
-              <label style={{ fontSize: '12px', fontWeight: 'bold' }}>From Date:</label>
-              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={{ display: 'block', padding: '6px' }} />
-            </div>
-            <div>
-              <label style={{ fontSize: '12px', fontWeight: 'bold' }}>To Date:</label>
-              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} style={{ display: 'block', padding: '6px' }} />
-            </div>
-            <button onClick={fetchHistory} style={{ marginTop: '15px', padding: '8px 16px', backgroundColor: '#1F4E78', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>
-              🔍 Search Records
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap' }}>
+            <label><strong>From:</strong></label>
+            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={{ padding: '6px' }} />
+            <label><strong>To:</strong></label>
+            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} style={{ padding: '6px' }} />
+            <button onClick={fetchHistory} style={{ padding: '6px 14px', backgroundColor: '#1F4E78', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
+              🔍 Search
             </button>
           </div>
 
-          {/* Export Action Controls */}
           {historyData.length > 0 && (
             <div style={{ display: 'flex', gap: '10px', marginBottom: '15px', flexWrap: 'wrap' }}>
-              <button onClick={exportExcelCSV} style={{ padding: '8px 14px', backgroundColor: '#2E7D32', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>
-                📥 Download Excel (.csv)
+              <button onClick={exportExcelCSV} style={{ padding: '6px 12px', backgroundColor: '#2E7D32', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
+                📥 Export Excel (.csv)
               </button>
-              <button onClick={exportPDFPrint} style={{ padding: '8px 14px', backgroundColor: '#D32F2F', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>
-                🖨️ Save as PDF / Print
+              <button onClick={exportPDFPrint} style={{ padding: '6px 12px', backgroundColor: '#D32F2F', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
+                🖨️ PDF / Print
               </button>
-              <button onClick={shareWhatsApp} style={{ padding: '8px 14px', backgroundColor: '#25D366', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>
-                📲 Share via WhatsApp
+              <button onClick={shareWhatsApp} style={{ padding: '6px 12px', backgroundColor: '#25D366', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
+                📲 Send to WhatsApp
               </button>
             </div>
           )}
@@ -215,29 +208,29 @@ export default function ProductionReportForm({ type, onSaved }) {
             <div>Loading records...</div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
-              <table border="1" cellPadding="6" style={{ borderCollapse: 'collapse', width: '100%', textAlign: 'left', minWidth: '600px' }}>
+              <table border="1" cellPadding="6" style={{ borderCollapse: 'collapse', width: '100%', textAlign: 'left' }}>
                 <thead>
                   <tr style={{ backgroundColor: '#1F4E78', color: 'white' }}>
                     <th>Date</th>
                     <th>Weaver Name</th>
                     <th>Target</th>
-                    <th>Prod</th>
+                    <th>Production</th>
                     <th>Noli Target</th>
-                    <th>Noli Prod</th>
+                    <th>Noli Production</th>
                   </tr>
                 </thead>
                 <tbody>
                   {historyData.length === 0 ? (
-                    <tr><td colSpan="6" style={{ textAlign: 'center' }}>No record found for selected date range.</td></tr>
+                    <tr><td colSpan="6" style={{ textAlign: 'center' }}>No records found for selected range.</td></tr>
                   ) : (
-                    historyData.map((row) => (
-                      <tr key={row.id}>
-                        <td>{row.date}</td>
-                        <td><strong>{row.weaver_name}</strong></td>
-                        <td>{row.target}</td>
-                        <td>{row.production}</td>
-                        <td>{row.noli_target}</td>
-                        <td>{row.noli_production}</td>
+                    historyData.map((r) => (
+                      <tr key={r.id}>
+                        <td>{r.date}</td>
+                        <td>{r.weaver_name}</td>
+                        <td>{r.target}</td>
+                        <td>{r.production}</td>
+                        <td>{r.noli_target}</td>
+                        <td>{r.noli_production}</td>
                       </tr>
                     ))
                   )}
