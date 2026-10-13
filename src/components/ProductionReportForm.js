@@ -21,7 +21,6 @@ export default function ProductionReportForm({ type, onSaved }) {
     fetchWeavers();
   }, [type]);
 
-  // ডাটাবেজ থেকে পূর্বে সেভ করা weaver-দের নাম এবং তাদের শেষ টার্গেট নিয়ে আসার জন্য
   const fetchWeavers = async () => {
     const { data, error } = await supabase
       .from(tableName)
@@ -49,7 +48,6 @@ export default function ProductionReportForm({ type, onSaved }) {
     setRows(updatedRows);
   };
 
-  // ড্রপডাউন থেকে তাঁতি সিলেক্ট করলে অটোমেটিক নাম, টার্গেট শাড়ি ও টার্গেট নলি ফিল-আপ হবে
   const handleSelectWeaver = (index, weaverName) => {
     const selected = savedWeavers.find(w => w.name === weaverName);
     const updatedRows = [...rows];
@@ -99,7 +97,7 @@ export default function ProductionReportForm({ type, onSaved }) {
     } else {
       alert('Production data saved successfully!');
       setRows([{ weaver_name: '', target_saree: '', prod_saree: '', target_noli: '', prod_noli: '' }]);
-      fetchWeavers(); // সেভ হওয়া নতুন তাঁতির নাম তালিকা আপডেট
+      fetchWeavers();
       if (onSaved) onSaved();
     }
   };
@@ -146,9 +144,47 @@ export default function ProductionReportForm({ type, onSaved }) {
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
+  // Sum calculations for PDF summary
+  const totalTarget = historyData.reduce((acc, curr) => acc + Number(curr.target || 0), 0);
+  const totalProd = historyData.reduce((acc, curr) => acc + Number(curr.production || 0), 0);
+  const totalNoliTarget = historyData.reduce((acc, curr) => acc + Number(curr.noli_target || 0), 0);
+  const totalNoliProd = historyData.reduce((acc, curr) => acc + Number(curr.noli_production || 0), 0);
+
   return (
     <div>
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+      {/* CSS stylesheet for clean Print/PDF output */}
+      <style jsx global>{`
+        @media print {
+          .no-print {
+            display: none !important;
+          }
+          body {
+            background-color: white !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+          .print-header {
+            display: block !important;
+            text-align: center;
+            margin-bottom: 20px;
+          }
+          table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+          }
+          th, td {
+            border: 1px solid #333 !important;
+            padding: 8px !important;
+            font-size: 12px !important;
+          }
+        }
+        .print-header {
+          display: none;
+        }
+      `}</style>
+
+      {/* Mode Switcher */}
+      <div className="no-print" style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
         <button onClick={() => setViewMode('entry')} style={{ padding: '8px 16px', backgroundColor: viewMode === 'entry' ? '#1F4E78' : '#e0e0e0', color: viewMode === 'entry' ? 'white' : 'black', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
           ➕ Daily Data Entry
         </button>
@@ -159,7 +195,7 @@ export default function ProductionReportForm({ type, onSaved }) {
 
       {viewMode === 'entry' ? (
         <div>
-          <div style={{ marginBottom: '15px' }}>
+          <div className="no-print" style={{ marginBottom: '15px' }}>
             <label><strong>Date: </strong></label>
             <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={{ padding: '6px' }} />
           </div>
@@ -172,7 +208,7 @@ export default function ProductionReportForm({ type, onSaved }) {
                   <th rowSpan="2">Weaver Name</th>
                   <th colSpan="2">{type.toUpperCase()}</th>
                   <th colSpan="2">{type === 'tana' ? 'Yarn Use' : 'Noli Use'}</th>
-                  <th rowSpan="2">Action</th>
+                  <th rowSpan="2" className="no-print">Action</th>
                 </tr>
                 <tr style={{ backgroundColor: '#2F5597', color: 'white' }}>
                   <th>Target</th>
@@ -186,7 +222,6 @@ export default function ProductionReportForm({ type, onSaved }) {
                   <tr key={index}>
                     <td>{index + 1}</td>
                     <td>
-                      {/* Dynamic Search & Auto-complete input */}
                       <input 
                         type="text" 
                         list={`weaver-list-${index}`}
@@ -205,7 +240,7 @@ export default function ProductionReportForm({ type, onSaved }) {
                     <td><input type="number" value={row.prod_saree} onChange={(e) => handleRowChange(index, 'prod_saree', e.target.value)} style={{ width: '80px', padding: '4px' }} /></td>
                     <td><input type="number" value={row.target_noli} onChange={(e) => handleRowChange(index, 'target_noli', e.target.value)} style={{ width: '80px', padding: '4px' }} /></td>
                     <td><input type="number" value={row.prod_noli} onChange={(e) => handleRowChange(index, 'prod_noli', e.target.value)} style={{ width: '80px', padding: '4px' }} /></td>
-                    <td>
+                    <td className="no-print">
                       {rows.length > 1 && (
                         <button onClick={() => removeRow(index)} style={{ backgroundColor: '#D32F2F', color: 'white', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}>❌</button>
                       )}
@@ -216,7 +251,7 @@ export default function ProductionReportForm({ type, onSaved }) {
             </table>
           </div>
 
-          <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
+          <div className="no-print" style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
             <button onClick={addRow} style={{ padding: '8px 16px', backgroundColor: '#0288D1', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>
               ➕ Add Row
             </button>
@@ -226,9 +261,9 @@ export default function ProductionReportForm({ type, onSaved }) {
           </div>
         </div>
       ) : (
-        /* History View */
+        /* History & Standard Printable Report View */
         <div>
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap' }}>
+          <div className="no-print" style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap' }}>
             <label><strong>From:</strong></label>
             <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={{ padding: '6px' }} />
             <label><strong>To:</strong></label>
@@ -239,7 +274,7 @@ export default function ProductionReportForm({ type, onSaved }) {
           </div>
 
           {historyData.length > 0 && (
-            <div style={{ display: 'flex', gap: '10px', marginBottom: '15px', flexWrap: 'wrap' }}>
+            <div className="no-print" style={{ display: 'flex', gap: '10px', marginBottom: '15px', flexWrap: 'wrap' }}>
               <button onClick={exportExcelCSV} style={{ padding: '6px 12px', backgroundColor: '#2E7D32', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
                 📥 Export Excel (.csv)
               </button>
@@ -252,6 +287,14 @@ export default function ProductionReportForm({ type, onSaved }) {
             </div>
           )}
 
+          {/* Standard Corporate Header for PDF */}
+          <div className="print-header">
+            <h2 style={{ margin: 0, color: '#1F4E78' }}>BRAC Sericulture Enterprise</h2>
+            <h4 style={{ margin: '5px 0', color: '#555' }}>Taragonj Silk Production Center</h4>
+            <p style={{ margin: 0, fontSize: '14px' }}><strong>{type.toUpperCase()} Production Statement Report</strong></p>
+            <p style={{ margin: '3px 0 15px 0', fontSize: '12px', color: '#666' }}>Date Range: {startDate} to {endDate}</p>
+          </div>
+
           {loadingHistory ? (
             <div>Loading records...</div>
           ) : (
@@ -259,6 +302,7 @@ export default function ProductionReportForm({ type, onSaved }) {
               <table border="1" cellPadding="6" style={{ borderCollapse: 'collapse', width: '100%', textAlign: 'left' }}>
                 <thead>
                   <tr style={{ backgroundColor: '#1F4E78', color: 'white' }}>
+                    <th>SL</th>
                     <th>Date</th>
                     <th>Weaver Name</th>
                     <th>Target</th>
@@ -269,18 +313,29 @@ export default function ProductionReportForm({ type, onSaved }) {
                 </thead>
                 <tbody>
                   {historyData.length === 0 ? (
-                    <tr><td colSpan="6" style={{ textAlign: 'center' }}>No records found for selected range.</td></tr>
+                    <tr><td colSpan="7" style={{ textAlign: 'center' }}>No records found for selected range.</td></tr>
                   ) : (
-                    historyData.map((r) => (
-                      <tr key={r.id}>
-                        <td>{r.date}</td>
-                        <td>{r.weaver_name}</td>
-                        <td>{r.target}</td>
-                        <td>{r.production}</td>
-                        <td>{r.noli_target}</td>
-                        <td>{r.noli_production}</td>
+                    <>
+                      {historyData.map((r, i) => (
+                        <tr key={r.id || i}>
+                          <td>{i + 1}</td>
+                          <td>{r.date}</td>
+                          <td><strong>{r.weaver_name}</strong></td>
+                          <td>{r.target}</td>
+                          <td>{r.production}</td>
+                          <td>{r.noli_target}</td>
+                          <td>{r.noli_production}</td>
+                        </tr>
+                      ))}
+                      {/* Summary Row for PDF */}
+                      <tr style={{ backgroundColor: '#f0f4f8', fontWeight: 'bold' }}>
+                        <td colSpan="3" style={{ textAlign: 'right' }}>Total Summary:</td>
+                        <td>{totalTarget}</td>
+                        <td>{totalProd}</td>
+                        <td>{totalNoliTarget}</td>
+                        <td>{totalNoliProd}</td>
                       </tr>
-                    ))
+                    </>
                   )}
                 </tbody>
               </table>
