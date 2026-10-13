@@ -4,88 +4,107 @@ import { supabase } from '../lib/supabaseClient';
 export default function NoliLachiReportForm({ onSaved }) {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [rows, setRows] = useState([
-    { sl_no: 1, spinner_name: '', village: '', supply_cocoon: '', lachi_received: '', noli_received: '' }
+    { spinner_name: '', cocoon_target: '', cocoon_prod: '', noli_prod: '', lachi_prod: '' }
   ]);
+  const [saving, setSaving] = useState(false);
+
+  const handleRowChange = (index, field, value) => {
+    const updated = [...rows];
+    updated[index][field] = value;
+    setRows(updated);
+  };
 
   const addRow = () => {
-    setRows([...rows, { sl_no: rows.length + 1, spinner_name: '', village: '', supply_cocoon: '', lachi_received: '', noli_received: '' }]);
+    setRows([...rows, { spinner_name: '', cocoon_target: '', cocoon_prod: '', noli_prod: '', lachi_prod: '' }]);
   };
 
-  const handleInputChange = (index, field, value) => {
-    const updatedRows = [...rows];
-    updatedRows[index][field] = value;
-    setRows(updatedRows);
+  const removeRow = (index) => {
+    if (rows.length === 1) return;
+    setRows(rows.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const validRows = rows.filter((r) => r.spinner_name.trim() !== '');
+  const handleSave = async () => {
+    setSaving(true);
+    const insertData = rows
+      .filter(r => r.spinner_name.trim() !== '')
+      .map(r => ({
+        date,
+        spinner_name: r.spinner_name,
+        cocoon_target: Number(r.cocoon_target || 0),
+        cocoon_prod: Number(r.cocoon_prod || 0),
+        noli_prod: Number(r.noli_prod || 0),
+        lachi_prod: Number(r.lachi_prod || 0),
+      }));
 
-    if (validRows.length === 0) return alert('Spinner Name Required!');
+    if (insertData.length === 0) {
+      alert('Please fill in at least one Spinner Name!');
+      setSaving(false);
+      return;
+    }
 
-    const dataToInsert = validRows.map((r) => ({
-      date,
-      sl_no: r.sl_no,
-      spinner_name: r.spinner_name,
-      village: r.village,
-      supply_cocoon: parseFloat(r.supply_cocoon || 0),
-      lachi_received: parseFloat(r.lachi_received || 0),
-      noli_received: parseFloat(r.noli_received || 0)
-    }));
+    const { error } = await supabase.from('noli_lachi_production').insert(insertData);
+    setSaving(false);
 
-    const { error } = await supabase.from('noli_lachi_production').insert(dataToInsert);
-    if (error) alert('Error: ' + error.message);
-    else {
-      alert('Daily Noli/Endi Lachi Report Saved Successfully!');
+    if (error) {
+      alert('Error saving data: ' + error.message);
+    } else {
+      alert('Noli & Endi Lachi report saved successfully!');
+      setRows([{ spinner_name: '', cocoon_target: '', cocoon_prod: '', noli_prod: '', lachi_prod: '' }]);
       if (onSaved) onSaved();
     }
   };
 
   return (
     <div style={{ fontFamily: 'Arial' }}>
-      <h3 style={{ color: '#1F4E78', marginTop: 0 }}>Daily Noli / Endi Lachi Entry</h3>
-      <div style={{ marginBottom: '10px' }}>
+      <div style={{ marginBottom: '15px' }}>
         <label><strong>Date: </strong></label>
-        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={{ padding: '5px' }} />
+        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={{ padding: '6px' }} />
       </div>
 
-      <form onSubmit={handleSubmit}>
-        <div style={{ overflowX: 'auto' }}>
-          <table border="1" cellPadding="5" style={{ borderCollapse: 'collapse', width: '100%' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#1F4E78', color: 'white' }}>
-                <th>SL</th>
-                <th>Spinner Name</th>
-                <th>Village</th>
-                <th>Supply Cocoon</th>
-                <th>Lachi Received</th>
-                <th>Noli Received</th>
+      <div style={{ overflowX: 'auto' }}>
+        <table border="1" cellPadding="6" style={{ borderCollapse: 'collapse', width: '100%', textAlign: 'center' }}>
+          <thead>
+            <tr style={{ backgroundColor: '#1F4E78', color: 'white' }}>
+              <th rowSpan="2">SL</th>
+              <th rowSpan="2">Spinner Name</th>
+              <th colSpan="2">Cocoon Supply</th>
+              <th rowSpan="2">Noli Production</th>
+              <th rowSpan="2">Endi Lachi Production</th>
+              <th rowSpan="2">Action</th>
+            </tr>
+            <tr style={{ backgroundColor: '#2F5597', color: 'white' }}>
+              <th>Target</th>
+              <th>Production</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, index) => (
+              <tr key={index}>
+                <td>{index + 1}</td>
+                <td><input type="text" value={row.spinner_name} onChange={(e) => handleRowChange(index, 'spinner_name', e.target.value)} style={{ width: '100%', padding: '4px', boxSizing: 'border-box' }} /></td>
+                <td><input type="number" value={row.cocoon_target} onChange={(e) => handleRowChange(index, 'cocoon_target', e.target.value)} style={{ width: '80px', padding: '4px' }} /></td>
+                <td><input type="number" value={row.cocoon_prod} onChange={(e) => handleRowChange(index, 'cocoon_prod', e.target.value)} style={{ width: '80px', padding: '4px' }} /></td>
+                <td><input type="number" value={row.noli_prod} onChange={(e) => handleRowChange(index, 'noli_prod', e.target.value)} style={{ width: '80px', padding: '4px' }} /></td>
+                <td><input type="number" value={row.lachi_prod} onChange={(e) => handleRowChange(index, 'lachi_prod', e.target.value)} style={{ width: '80px', padding: '4px' }} /></td>
+                <td>
+                  {rows.length > 1 && (
+                    <button onClick={() => removeRow(index)} style={{ backgroundColor: '#D32F2F', color: 'white', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}>❌</button>
+                  )}
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {rows.map((row, i) => (
-                <tr key={i}>
-                  <td style={{ textAlign: 'center' }}>{row.sl_no}</td>
-                  <td><input type="text" value={row.spinner_name} onChange={(e) => handleInputChange(i, 'spinner_name', e.target.value)} style={{ width: '100%' }} /></td>
-                  <td><input type="text" value={row.village} onChange={(e) => handleInputChange(i, 'village', e.target.value)} style={{ width: '100%' }} /></td>
-                  <td><input type="number" value={row.supply_cocoon} onChange={(e) => handleInputChange(i, 'supply_cocoon', e.target.value)} style={{ width: '100%' }} /></td>
-                  <td><input type="number" value={row.lachi_received} onChange={(e) => handleInputChange(i, 'lachi_received', e.target.value)} style={{ width: '100%' }} /></td>
-                  <td><input type="number" value={row.noli_received} onChange={(e) => handleInputChange(i, 'noli_received', e.target.value)} style={{ width: '100%' }} /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
-        <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-          <button type="button" onClick={addRow} style={{ padding: '8px 15px', backgroundColor: '#0288D1', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-            ➕ Add Row
-          </button>
-          <button type="submit" style={{ padding: '8px 15px', backgroundColor: '#2E7D32', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>
-            💾 Save Data
-          </button>
-        </div>
-      </form>
+      <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
+        <button onClick={addRow} style={{ padding: '8px 16px', backgroundColor: '#0288D1', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>
+          ➕ Add Row
+        </button>
+        <button onClick={handleSave} disabled={saving} style={{ padding: '8px 16px', backgroundColor: '#2E7D32', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>
+          {saving ? 'Saving...' : '💾 Save Data'}
+        </button>
+      </div>
     </div>
   );
 }

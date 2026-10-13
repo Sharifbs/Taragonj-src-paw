@@ -1,125 +1,121 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
-export default function ProductionReportForm({ type = 'saree', onSaved }) {
-  const isSaree = type === 'saree';
-  const tableName = isSaree ? 'saree_production' : 'dopatta_production';
-  const itemLabel = isSaree ? 'Saree' : 'Dopatta';
-
+export default function ProductionReportForm({ type, onSaved }) {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [savedWeavers, setSavedWeavers] = useState([]);
   const [rows, setRows] = useState([
-    { sl_no: 1, weaver_name: '', target: '', production: '', noli_target: '', noli_production: '' }
+    { weaver_name: '', target_saree: '', prod_saree: '', target_noli: '', prod_noli: '' }
   ]);
+  const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    fetchSavedWeavers();
-  }, []);
-
-  const fetchSavedWeavers = async () => {
-    const { data } = await supabase.from('master_workers').select('worker_name').eq('role_type', 'weaver');
-    if (data) setSavedWeavers(data.map(d => d.worker_name));
-  };
-
-  const addRow = () => {
-    setRows([...rows, { sl_no: rows.length + 1, weaver_name: '', target: '', production: '', noli_target: '', noli_production: '' }]);
-  };
-
-  const handleInputChange = (index, field, value) => {
+  const handleRowChange = (index, field, value) => {
     const updatedRows = [...rows];
     updatedRows[index][field] = value;
     setRows(updatedRows);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const validRows = rows.filter((r) => r.weaver_name.trim() !== '');
+  const addRow = () => {
+    setRows([...rows, { weaver_name: '', target_saree: '', prod_saree: '', target_noli: '', prod_noli: '' }]);
+  };
 
-    if (validRows.length === 0) return alert('At least 1 Weaver Name is required!');
+  const removeRow = (index) => {
+    if (rows.length === 1) return;
+    setRows(rows.filter((_, i) => i !== index));
+  };
 
-    // Save auto-suggestion master names
-    const newNames = validRows.map(r => ({ worker_name: r.weaver_name.trim(), role_type: 'weaver' }));
-    await supabase.from('master_workers').upsert(newNames, { onConflict: 'worker_name' });
+  const handleSave = async () => {
+    setSaving(true);
+    const tableName = type === 'saree' ? 'saree_production' : type === 'dopatta' ? 'dopatta_production' : 'tana_production';
 
-    // Save Data
-    const dataToInsert = validRows.map((r) => ({
-      date,
-      sl_no: r.sl_no,
-      weaver_name: r.weaver_name,
-      target: parseFloat(r.target || 0),
-      production: parseFloat(r.production || 0),
-      noli_target: parseFloat(r.noli_target || 0),
-      noli_production: parseFloat(r.noli_production || 0)
-    }));
+    const insertData = rows
+      .filter(r => r.weaver_name.trim() !== '')
+      .map(r => ({
+        date,
+        weaver_name: r.weaver_name,
+        target: Number(r.target_saree || 0),
+        production: Number(r.prod_saree || 0),
+        noli_target: Number(r.target_noli || 0),
+        noli_production: Number(r.prod_noli || 0),
+      }));
 
-    const { error } = await supabase.from(tableName).insert(dataToInsert);
-    if (error) alert('Error: ' + error.message);
-    else {
-      alert(`Daily ${itemLabel} Report Saved Successfully!`);
-      fetchSavedWeavers();
+    if (insertData.length === 0) {
+      alert('Please fill in at least one weaver row!');
+      setSaving(false);
+      return;
+    }
+
+    const { error } = await supabase.from(tableName).insert(insertData);
+    setSaving(false);
+
+    if (error) {
+      alert('Error saving data: ' + error.message);
+    } else {
+      alert('Production data saved successfully!');
+      setRows([{ weaver_name: '', target_saree: '', prod_saree: '', target_noli: '', prod_noli: '' }]);
       if (onSaved) onSaved();
     }
   };
 
   return (
-    <div style={{ fontFamily: 'Arial' }}>
-      <datalist id="weaver-suggestions">
-        {savedWeavers.map((name, i) => <option key={i} value={name} />)}
-      </datalist>
-
-      <h3 style={{ color: '#1F4E78', marginTop: 0 }}>{itemLabel} Daily Production Entry</h3>
-      <div style={{ marginBottom: '10px' }}>
+    <div>
+      <div style={{ marginBottom: '15px' }}>
         <label><strong>Date: </strong></label>
-        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={{ padding: '5px' }} />
+        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={{ padding: '6px' }} />
       </div>
 
-      <form onSubmit={handleSubmit}>
-        <div style={{ overflowX: 'auto' }}>
-          <table border="1" cellPadding="5" style={{ borderCollapse: 'collapse', width: '100%' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#1F4E78', color: 'white' }}>
-                <th rowSpan="2">SL</th>
-                <th rowSpan="2">Weaver Name</th>
-                <th colSpan="2">{itemLabel}</th>
-                <th colSpan="2">Noli Use</th>
+      <div style={{ overflowX: 'auto' }}>
+        <table border="1" cellPadding="6" style={{ borderCollapse: 'collapse', width: '100%', textAlign: 'center' }}>
+          <thead>
+            <tr style={{ backgroundColor: '#1F4E78', color: 'white' }}>
+              <th rowSpan="2">SL</th>
+              <th rowSpan="2">Weaver Name</th>
+              <th colSpan="2">{type.toUpperCase()}</th>
+              <th colSpan="2">{type === 'tana' ? 'Yarn Use' : 'Noli Use'}</th>
+              <th rowSpan="2">Action</th>
+            </tr>
+            <tr style={{ backgroundColor: '#2F5597', color: 'white' }}>
+              <th>Target</th>
+              <th>Production</th>
+              <th>Target</th>
+              <th>Production</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, index) => (
+              <tr key={index}>
+                <td>{index + 1}</td>
+                <td>
+                  <input 
+                    type="text" 
+                    placeholder="Type or select name" 
+                    value={row.weaver_name} 
+                    onChange={(e) => handleRowChange(index, 'weaver_name', e.target.value)} 
+                    style={{ width: '100%', padding: '4px', boxSizing: 'border-box' }}
+                  />
+                </td>
+                <td><input type="number" value={row.target_saree} onChange={(e) => handleRowChange(index, 'target_saree', e.target.value)} style={{ width: '80px', padding: '4px' }} /></td>
+                <td><input type="number" value={row.prod_saree} onChange={(e) => handleRowChange(index, 'prod_saree', e.target.value)} style={{ width: '80px', padding: '4px' }} /></td>
+                <td><input type="number" value={row.target_noli} onChange={(e) => handleRowChange(index, 'target_noli', e.target.value)} style={{ width: '80px', padding: '4px' }} /></td>
+                <td><input type="number" value={row.prod_noli} onChange={(e) => handleRowChange(index, 'prod_noli', e.target.value)} style={{ width: '80px', padding: '4px' }} /></td>
+                <td>
+                  {rows.length > 1 && (
+                    <button onClick={() => removeRow(index)} style={{ backgroundColor: '#D32F2F', color: 'white', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}>❌</button>
+                  )}
+                </td>
               </tr>
-              <tr style={{ backgroundColor: '#2F5597', color: 'white' }}>
-                <th>Target</th><th>Production</th><th>Target</th><th>Production</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row, i) => (
-                <tr key={i}>
-                  <td style={{ textAlign: 'center' }}>{row.sl_no}</td>
-                  <td>
-                    <input 
-                      type="text" 
-                      list="weaver-suggestions" 
-                      value={row.weaver_name} 
-                      onChange={(e) => handleInputChange(i, 'weaver_name', e.target.value)} 
-                      placeholder="Type or select name"
-                      style={{ width: '100%', boxSizing: 'border-box' }} 
-                    />
-                  </td>
-                  <td><input type="number" value={row.target} onChange={(e) => handleInputChange(i, 'target', e.target.value)} style={{ width: '100%' }} /></td>
-                  <td><input type="number" value={row.production} onChange={(e) => handleInputChange(i, 'production', e.target.value)} style={{ width: '100%' }} /></td>
-                  <td><input type="number" value={row.noli_target} onChange={(e) => handleInputChange(i, 'noli_target', e.target.value)} style={{ width: '100%' }} /></td>
-                  <td><input type="number" value={row.noli_production} onChange={(e) => handleInputChange(i, 'noli_production', e.target.value)} style={{ width: '100%' }} /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
-        <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-          <button type="button" onClick={addRow} style={{ padding: '8px 15px', backgroundColor: '#0288D1', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-            ➕ Add Row
-          </button>
-          <button type="submit" style={{ padding: '8px 15px', backgroundColor: '#2E7D32', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>
-            💾 Save Data
-          </button>
-        </div>
-      </form>
+      <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
+        <button onClick={addRow} style={{ padding: '8px 16px', backgroundColor: '#0288D1', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>
+          ➕ Add Row
+        </button>
+        <button onClick={handleSave} disabled={saving} style={{ padding: '8px 16px', backgroundColor: '#2E7D32', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>
+          {saving ? 'Saving...' : '💾 Save Data'}
+        </button>
+      </div>
     </div>
   );
 }
