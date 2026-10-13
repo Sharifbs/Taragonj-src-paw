@@ -63,9 +63,7 @@ export default function CharkaSpinnersForm({ onSaved }) {
       .order('date', { ascending: false });
 
     setLoadingHistory(false);
-    if (!error && data) {
-      setHistoryData(data);
-    }
+    if (!error && data) setHistoryData(data);
   };
 
   const exportExcelCSV = () => {
@@ -98,13 +96,13 @@ export default function CharkaSpinnersForm({ onSaved }) {
         <div>
           <div style={{ marginBottom: '15px' }}>
             <label><strong>Date: </strong></label>
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={{ padding: '6px' }} />
+            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={{ padding: '8px', fontSize: '14px', borderRadius: '4px', border: '1px solid #ccc' }} />
           </div>
 
           <div style={{ overflowX: 'auto' }}>
-            <table border="1" cellPadding="6" style={{ borderCollapse: 'collapse', width: '100%', textAlign: 'center' }}>
+            <table border="1" cellPadding="8" style={{ borderCollapse: 'collapse', width: '100%', textAlign: 'center', minWidth: '700px' }}>
               <thead>
-                <tr style={{ backgroundColor: '#1F4E78', color: 'white' }}>
+                <tr style={{ backgroundColor: '#1F4E78', color: 'white', fontSize: '14px' }}>
                   <th>SL</th>
                   <th>Spinner Name</th>
                   <th>Husband/Father</th>
@@ -119,21 +117,21 @@ export default function CharkaSpinnersForm({ onSaved }) {
                 {rows.map((row, index) => (
                   <tr key={index}>
                     <td>{index + 1}</td>
-                    <td><input type="text" value={row.spinner_name} onChange={(e) => handleRowChange(index, 'spinner_name', e.target.value)} style={{ width: '100%', padding: '4px', boxSizing: 'border-box' }} /></td>
-                    <td><input type="text" value={row.husband_father} onChange={(e) => handleRowChange(index, 'husband_father', e.target.value)} style={{ width: '100%', padding: '4px', boxSizing: 'border-box' }} /></td>
-                    <td><input type="text" value={row.cell_number} onChange={(e) => handleRowChange(index, 'cell_number', e.target.value)} style={{ width: '100%', padding: '4px', boxSizing: 'border-box' }} /></td>
-                    <td><input type="text" value={row.village} onChange={(e) => handleRowChange(index, 'village', e.target.value)} style={{ width: '100%', padding: '4px', boxSizing: 'border-box' }} /></td>
+                    <td><input type="text" placeholder="Name" value={row.spinner_name} onChange={(e) => handleRowChange(index, 'spinner_name', e.target.value)} style={{ width: '100%', padding: '8px', boxSizing: 'border-box', fontSize: '14px' }} /></td>
+                    <td><input type="text" placeholder="Husband/Father" value={row.husband_father} onChange={(e) => handleRowChange(index, 'husband_father', e.target.value)} style={{ width: '100%', padding: '8px', boxSizing: 'border-box', fontSize: '14px' }} /></td>
+                    <td><input type="tel" placeholder="Mobile" value={row.cell_number} onChange={(e) => handleRowChange(index, 'cell_number', e.target.value)} style={{ width: '100%', padding: '8px', boxSizing: 'border-box', fontSize: '14px' }} /></td>
+                    <td><input type="text" placeholder="Village" value={row.village} onChange={(e) => handleRowChange(index, 'village', e.target.value)} style={{ width: '100%', padding: '8px', boxSizing: 'border-box', fontSize: '14px' }} /></td>
                     <td>
-                      <select value={row.status} onChange={(e) => handleRowChange(index, 'status', e.target.value)} style={{ padding: '4px' }}>
+                      <select value={row.status} onChange={(e) => handleRowChange(index, 'status', e.target.value)} style={{ padding: '8px', fontSize: '14px' }}>
                         <option value="Active">Active</option>
                         <option value="New">New</option>
                         <option value="InActive">InActive</option>
                       </select>
                     </td>
-                    <td><input type="text" value={row.remarks} onChange={(e) => handleRowChange(index, 'remarks', e.target.value)} style={{ width: '100%', padding: '4px', boxSizing: 'border-box' }} /></td>
+                    <td><input type="text" placeholder="Remarks" value={row.remarks} onChange={(e) => handleRowChange(index, 'remarks', e.target.value)} style={{ width: '100%', padding: '8px', boxSizing: 'border-box', fontSize: '14px' }} /></td>
                     <td>
                       {rows.length > 1 && (
-                        <button onClick={() => removeRow(index)} style={{ backgroundColor: '#D32F2F', color: 'white', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}>❌</button>
+                        <button onClick={() => removeRow(index)} style={{ backgroundColor: '#D32F2F', color: 'white', border: 'none', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer' }}>❌</button>
                       )}
                     </td>
                   </tr>
@@ -143,17 +141,17 @@ export default function CharkaSpinnersForm({ onSaved }) {
           </div>
 
           <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
-            <button onClick={addRow} style={{ padding: '8px 16px', backgroundColor: '#0288D1', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>
+            <button onClick={addRow} style={{ padding: '10px 18px', backgroundColor: '#0288D1', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>
               ➕ Add Row
             </button>
-            <button onClick={handleSave} disabled={saving} style={{ padding: '8px 16px', backgroundColor: '#2E7D32', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>
+            <button onClick={handleSave} disabled={saving} style={{ padding: '10px 18px', backgroundColor: '#2E7D32', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>
               {saving ? 'Saving...' : '💾 Save Statement'}
             </button>
           </div>
         </div>
       ) : (
         <div>
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '15px' }}>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap' }}>
             <label><strong>From:</strong></label>
             <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={{ padding: '6px' }} />
             <label><strong>To:</strong></label>
