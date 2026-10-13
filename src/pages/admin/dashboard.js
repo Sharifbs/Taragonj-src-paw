@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { supabase } from '../lib/supabaseClient';
-import ProductionReportForm from '../components/ProductionReportForm';
-import NoliLachiReportForm from '../components/NoliLachiReportForm';
+import { supabase } from '../../lib/supabaseClient';
+import ProductionReportForm from '../../components/ProductionReportForm';
+import NoliLachiReportForm from '../../components/NoliLachiReportForm';
 
-export default function Dashboard() {
+export default function AdminDashboard() {
   const [user, setUser] = useState(null);
   const [todayStats, setTodayStats] = useState({
     sareeProd: 0, sareeNoli: 0,
@@ -12,10 +12,8 @@ export default function Dashboard() {
     tanaProd: 0, yarnUse: 0,
     spinnersActive: 0, spinnersNew: 0, spinnersInactive: 0, spinnersTotal: 0
   });
-  const [activeTab, setActiveTab] = useState('summary');
+  const [activeTab, setActiveTab] = useState('saree');
   const router = useRouter();
-
-  const todayDate = new Date().toISOString().split('T')[0];
 
   useEffect(() => {
     const session = localStorage.getItem('user_session');
@@ -23,12 +21,13 @@ export default function Dashboard() {
       router.push('/');
       return;
     }
-    const loggedUser = JSON.parse(session);
-    setUser(loggedUser);
+    setUser(JSON.parse(session));
     fetchTodaySummary();
   }, []);
 
   const fetchTodaySummary = async () => {
+    const todayDate = new Date().toISOString().split('T')[0];
+
     // Saree Stats
     const { data: saree } = await supabase.from('saree_production').select('production, noli_production').eq('date', todayDate);
     const sareeProd = saree?.reduce((sum, r) => sum + Number(r.production || 0), 0) || 0;
@@ -44,7 +43,7 @@ export default function Dashboard() {
     const tanaProd = tana?.reduce((sum, r) => sum + Number(r.production || 0), 0) || 0;
     const yarnUse = tana?.reduce((sum, r) => sum + Number(r.yarn_production || 0), 0) || 0;
 
-    // Spinners Status Stats
+    // Spinners Stats
     const { data: spinners } = await supabase.from('charka_spinners').select('status').eq('date', todayDate);
     const spinnersActive = spinners?.filter(s => s.status === 'Active').length || 0;
     const spinnersNew = spinners?.filter(s => s.status === 'New').length || 0;
@@ -64,25 +63,25 @@ export default function Dashboard() {
     router.push('/');
   };
 
-  if (!user) return null;
+  if (!user) return <div style={{ padding: '20px', textAlign: 'center' }}>Loading Dashboard...</div>;
 
   const isAdmin = user.role === 'admin';
   const canAccess = (role) => isAdmin || user.role === role;
 
   return (
-    <div style={{ fontFamily: 'Arial', padding: '15px', backgroundColor: '#f4f6f9', minHeight: '100vh' }}>
-      {/* Top Header */}
+    <div style={{ fontFamily: 'Arial, sans-serif', padding: '15px', backgroundColor: '#f4f6f9', minHeight: '100vh' }}>
+      {/* Header Bar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1F4E78', padding: '12px 20px', color: 'white', borderRadius: '6px' }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: '18px' }}>BRAC Sericulture Dashboard</h2>
+          <h2 style={{ margin: 0, fontSize: '18px' }}>BRAC Sericulture Admin Dashboard</h2>
           <small>User: <strong>{user.user_id}</strong> ({user.role.toUpperCase()})</small>
         </div>
         <button onClick={handleLogout} style={{ padding: '6px 12px', backgroundColor: '#D32F2F', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Logout</button>
       </div>
 
-      {/* Summary Widgets Row */}
+      {/* Overview Widgets */}
       <div style={{ marginTop: '15px' }}>
-        <h4 style={{ margin: '0 0 10px 0', color: '#1F4E78' }}>Today's Production Overview ({todayDate})</h4>
+        <h4 style={{ margin: '0 0 10px 0', color: '#1F4E78' }}>Today's Live Production Summary</h4>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
           
           <div style={{ backgroundColor: 'white', padding: '12px', borderRadius: '6px', borderLeft: '4px solid #2F5597', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
@@ -112,20 +111,18 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Module Navigation Tabs */}
+      {/* Tabs */}
       <div style={{ display: 'flex', gap: '5px', marginTop: '20px', flexWrap: 'wrap' }}>
         {canAccess('saree') && <button onClick={() => setActiveTab('saree')} style={{ padding: '8px 12px', backgroundColor: activeTab === 'saree' ? '#1F4E78' : '#ddd', color: activeTab === 'saree' ? 'white' : 'black', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Saree Form</button>}
         {canAccess('dopatta') && <button onClick={() => setActiveTab('dopatta')} style={{ padding: '8px 12px', backgroundColor: activeTab === 'dopatta' ? '#1F4E78' : '#ddd', color: activeTab === 'dopatta' ? 'white' : 'black', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Dopatta Form</button>}
-        {canAccess('tana') && <button onClick={() => setActiveTab('tana')} style={{ padding: '8px 12px', backgroundColor: activeTab === 'tana' ? '#1F4E78' : '#ddd', color: activeTab === 'tana' ? 'white' : 'black', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Tana Form</button>}
         {canAccess('noli_lachi') && <button onClick={() => setActiveTab('noli_lachi')} style={{ padding: '8px 12px', backgroundColor: activeTab === 'noli_lachi' ? '#1F4E78' : '#ddd', color: activeTab === 'noli_lachi' ? 'white' : 'black', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Noli & Endi Lachi Form</button>}
       </div>
 
-      {/* Dynamic Form Render */}
+      {/* Forms Output */}
       <div style={{ backgroundColor: 'white', padding: '15px', borderRadius: '6px', marginTop: '10px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
         {activeTab === 'saree' && <ProductionReportForm type="saree" onSaved={fetchTodaySummary} />}
         {activeTab === 'dopatta' && <ProductionReportForm type="dopatta" onSaved={fetchTodaySummary} />}
         {activeTab === 'noli_lachi' && <NoliLachiReportForm onSaved={fetchTodaySummary} />}
-        {activeTab === 'summary' && <p style={{ color: '#666' }}>উপরের বাটনে ক্লিক করে পছন্দমতো ফরমের ইনপুট দিন।</p>}
       </div>
     </div>
   );
