@@ -144,7 +144,7 @@ export default function ProductionReportForm({ type, onSaved }) {
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
-  // Sum calculations for PDF summary
+  // Total summary calculation
   const totalTarget = historyData.reduce((acc, curr) => acc + Number(curr.target || 0), 0);
   const totalProd = historyData.reduce((acc, curr) => acc + Number(curr.production || 0), 0);
   const totalNoliTarget = historyData.reduce((acc, curr) => acc + Number(curr.noli_target || 0), 0);
@@ -152,7 +152,6 @@ export default function ProductionReportForm({ type, onSaved }) {
 
   return (
     <div>
-      {/* CSS stylesheet for clean Print/PDF output */}
       <style jsx global>{`
         @media print {
           .no-print {
@@ -174,7 +173,7 @@ export default function ProductionReportForm({ type, onSaved }) {
           }
           th, td {
             border: 1px solid #333 !important;
-            padding: 8px !important;
+            padding: 6px !important;
             font-size: 12px !important;
           }
         }
@@ -183,7 +182,7 @@ export default function ProductionReportForm({ type, onSaved }) {
         }
       `}</style>
 
-      {/* Mode Switcher */}
+      {/* Action Mode Buttons */}
       <div className="no-print" style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
         <button onClick={() => setViewMode('entry')} style={{ padding: '8px 16px', backgroundColor: viewMode === 'entry' ? '#1F4E78' : '#e0e0e0', color: viewMode === 'entry' ? 'white' : 'black', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
           ➕ Daily Data Entry
@@ -261,7 +260,7 @@ export default function ProductionReportForm({ type, onSaved }) {
           </div>
         </div>
       ) : (
-        /* History & Standard Printable Report View */
+        /* History & Grouped Header PDF Printable View */
         <div>
           <div className="no-print" style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap' }}>
             <label><strong>From:</strong></label>
@@ -287,28 +286,32 @@ export default function ProductionReportForm({ type, onSaved }) {
             </div>
           )}
 
-          {/* Standard Corporate Header for PDF */}
+          {/* Standard PDF Header */}
           <div className="print-header">
-            <h2 style={{ margin: 0, color: '#1F4E78' }}>BRAC Sericulture Enterprise</h2>
-            <h4 style={{ margin: '5px 0', color: '#555' }}>Taragonj Silk Production Center</h4>
-            <p style={{ margin: 0, fontSize: '14px' }}><strong>{type.toUpperCase()} Production Statement Report</strong></p>
-            <p style={{ margin: '3px 0 15px 0', fontSize: '12px', color: '#666' }}>Date Range: {startDate} to {endDate}</p>
+            <h1 style={{ margin: 0, color: '#1F4E78', fontSize: '24px' }}>BRAC Sericulture Enterprise</h1>
+            <h3 style={{ margin: '4px 0', color: '#555', fontSize: '16px' }}>Taragonj Silk Production Center</h3>
+            <h4 style={{ margin: '5px 0', fontSize: '15px' }}><strong>{type.toUpperCase()} Production Statement Report</strong></h4>
+            <p style={{ margin: '2px 0 15px 0', fontSize: '12px', color: '#666' }}>Date Range: {startDate} to {endDate}</p>
           </div>
 
           {loadingHistory ? (
             <div>Loading records...</div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
-              <table border="1" cellPadding="6" style={{ borderCollapse: 'collapse', width: '100%', textAlign: 'left' }}>
+              <table border="1" cellPadding="6" style={{ borderCollapse: 'collapse', width: '100%', textAlign: 'center' }}>
                 <thead>
                   <tr style={{ backgroundColor: '#1F4E78', color: 'white' }}>
-                    <th>SL</th>
-                    <th>Date</th>
-                    <th>Weaver Name</th>
+                    <th rowSpan="2">SL</th>
+                    <th rowSpan="2">Date</th>
+                    <th rowSpan="2">Weaver Name</th>
+                    <th colSpan="2">{type.toUpperCase()}</th>
+                    <th colSpan="2">{type === 'tana' ? 'Yarn Use' : 'Noli Use'}</th>
+                  </tr>
+                  <tr style={{ backgroundColor: '#2F5597', color: 'white' }}>
                     <th>Target</th>
                     <th>Production</th>
-                    <th>Noli Target</th>
-                    <th>Noli Production</th>
+                    <th>Target</th>
+                    <th>Production</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -320,14 +323,14 @@ export default function ProductionReportForm({ type, onSaved }) {
                         <tr key={r.id || i}>
                           <td>{i + 1}</td>
                           <td>{r.date}</td>
-                          <td><strong>{r.weaver_name}</strong></td>
+                          <td style={{ textAlign: 'left' }}><strong>{r.weaver_name}</strong></td>
                           <td>{r.target}</td>
                           <td>{r.production}</td>
                           <td>{r.noli_target}</td>
                           <td>{r.noli_production}</td>
                         </tr>
                       ))}
-                      {/* Summary Row for PDF */}
+                      {/* Summary Row */}
                       <tr style={{ backgroundColor: '#f0f4f8', fontWeight: 'bold' }}>
                         <td colSpan="3" style={{ textAlign: 'right' }}>Total Summary:</td>
                         <td>{totalTarget}</td>
