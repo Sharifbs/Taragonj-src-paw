@@ -12,11 +12,21 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
 
+    // Hardcoded Master Admin Fallback
+    if (userId.trim() === 'admin' && password.trim() === 'admin123') {
+      const adminSession = { user_id: 'admin', role: 'admin' };
+      localStorage.setItem('user_session', JSON.stringify(adminSession));
+      setLoading(false);
+      router.push('/admin/dashboard');
+      return;
+    }
+
+    // Supabase DB Authentication for other users
     const { data, error } = await supabase
       .from('app_users')
       .select('*')
-      .eq('user_id', userId)
-      .eq('password', password)
+      .eq('user_id', userId.trim())
+      .eq('password', password.trim())
       .single();
 
     setLoading(false);
