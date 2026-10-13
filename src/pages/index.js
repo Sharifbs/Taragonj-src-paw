@@ -12,8 +12,11 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
 
-    // Hardcoded Master Admin Fallback
-    if (userId.trim() === 'admin' && password.trim() === 'admin123') {
+    const cleanUserId = userId.trim();
+    const cleanPassword = password.trim();
+
+    // Admin Fallback
+    if (cleanUserId === 'admin' && cleanPassword === 'admin123') {
       const adminSession = { user_id: 'admin', role: 'admin' };
       localStorage.setItem('user_session', JSON.stringify(adminSession));
       setLoading(false);
@@ -21,12 +24,12 @@ export default function Login() {
       return;
     }
 
-    // Supabase DB Authentication for other users
+    // Supabase User Auth
     const { data, error } = await supabase
       .from('app_users')
       .select('*')
-      .eq('user_id', userId.trim())
-      .eq('password', password.trim())
+      .eq('user_id', cleanUserId)
+      .eq('password', cleanPassword)
       .single();
 
     setLoading(false);
@@ -38,10 +41,27 @@ export default function Login() {
 
     localStorage.setItem('user_session', JSON.stringify(data));
 
-    if (data.role === 'admin') {
-      router.push('/admin/dashboard');
-    } else {
-      router.push(`/user/${data.role}`);
+    switch (data.role) {
+      case 'admin':
+        router.push('/admin/dashboard');
+        break;
+      case 'saree':
+        router.push('/user/saree');
+        break;
+      case 'dopatta':
+        router.push('/user/dopatta');
+        break;
+      case 'tana':
+        router.push('/user/tana');
+        break;
+      case 'noli_lachi':
+        router.push('/user/noli-lachi');
+        break;
+      case 'charka':
+        router.push('/user/charka');
+        break;
+      default:
+        alert('No page assigned for this role!');
     }
   };
 
