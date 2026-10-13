@@ -1,79 +1,131 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabaseClient';
-import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { useRouter } from 'next/router';
+import { supabase } from '../lib/supabaseClient';
+import ProductionReportForm from '../components/ProductionReportForm';
+import NoliLachiReportForm from '../components/NoliLachiReportForm';
 
-export default function AdminDashboard() {
-  const [reportType, setReportType] = useState('saree_production');
-  const [dateFilter, setDateFilter] = useState('');
-  const [data, setData] = useState([]);
+export default function Dashboard() {
+  const [user, setUser] = useState(null);
+  const [todayStats, setTodayStats] = useState({
+    sareeProd: 0, sareeNoli: 0,
+    dopattaProd: 0, dopattaNoli: 0,
+    tanaProd: 0, yarnUse: 0,
+    spinnersActive: 0, spinnersNew: 0, spinnersInactive: 0, spinnersTotal: 0
+  });
+  const [activeTab, setActiveTab] = useState('summary');
+  const router = useRouter();
 
-  const fetchReport = async () => {
-    let query = supabase.from(reportType).select('*');
-    if (dateFilter) query = query.eq('date', dateFilter);
-    const { data: result, error } = await query;
-    if (!error) setData(result || []);
-  };
+  const todayDate = new Date().toISOString().split('T')[0];
 
-  useEffect(() => { fetchReport(); }, [reportType, dateFilter]);
-
-  const exportExcel = () => {
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Report");
-    XLSX.writeFile(wb, `BRAC_Report_${reportType}.xlsx`);
-  };
-
-  const exportPDF = () => {
-    const doc = new jsPDF();
-    doc.text(`BRAC Sericulture Report: ${reportType.toUpperCase()}`, 14, 15);
-    if (data.length > 0) {
-      const headers = Object.keys(data[0]);
-      const rows = data.map(obj => Object.values(obj));
-      doc.autoTable({ head: [headers], body: rows, startY: 20 });
+  useEffect(() => {
+    const session = localStorage.getItem('user_session');
+    if (!session) {
+      router.push('/');
+      return;
     }
-    doc.save(`BRAC_Report_${reportType}.pdf`);
+    const loggedUser = JSON.parse(session);
+    setUser(loggedUser);
+    fetchTodaySummary();
+  }, []);
+
+  const fetchTodaySummary = async () => {
+    // Saree Stats
+    const { data: saree } = await supabase.from('saree_production').select('production, noli_production').eq('date', todayDate);
+    const sareeProd = saree?.reduce((sum, r) => sum + Number(r.production || 0), 0) || 0;
+    const sareeNoli = saree?.reduce((sum, r) => sum + Number(r.noli_production || 0), 0) || 0;
+
+    // Dopatta Stats
+    const { data: dopatta } = await supabase.from('dopatta_production').select('production, noli_production').eq('date', todayDate);
+    const dopattaProd = dopatta?.reduce((sum, r) => sum + Number(r.production || 0), 0) || 0;
+    const dopattaNoli = dopatta?.reduce((sum, r) => sum + Number(r.noli_production || 0), 0) || 0;
+
+    // Tana Stats
+    const { data: tana } = await supabase.from('tana_production').select('production, yarn_production').eq('date', todayDate);
+    const tanaProd = tana?.reduce((sum, r) => sum + Number(r.production || 0), 0) || 0;
+    const yarnUse = tana?.reduce((sum, r) => sum + Number(r.yarn_production || 0), 0) || 0;
+
+    // Spinners Status Stats
+    const { data: spinners } = await supabase.from('charka_spinners').select('status').eq('date', todayDate);
+    const spinnersActive = spinners?.filter(s => s.status === 'Active').length || 0;
+    const spinnersNew = spinners?.filter(s => s.status === 'New').length || 0;
+    const spinnersInactive = spinners?.filter(s => s.status === 'InActive').length || 0;
+
+    setTodayStats({
+      sareeProd, sareeNoli,
+      dopattaProd, dopattaNoli,
+      tanaProd, yarnUse,
+      spinnersActive, spinnersNew, spinnersInactive,
+      spinnersTotal: spinners?.length || 0
+    });
   };
+
+  const handleLogout = () => {
+    localStorage.removeItem('user_session');
+    router.push('/');
+  };
+
+  if (!user) return null;
+
+  const isAdmin = user.role === 'admin';
+  const canAccess = (role) => isAdmin || user.role === role;
 
   return (
-    <div style={{ padding: '20px', fontFamily: 'Arial' }}>
-      <h2 style={{ color: '#1F4E78' }}>BRAC Sericulture — Central Admin Dashboard</h2>
-      
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
-        <select value={reportType} onChange={(e) => setReportType(e.target.value)} style={{ padding: '8px' }}>
-          <option value="charka_spinners">1. Charka Spinners Statement</option>
-          <option value="saree_production">2. Saree Daily Production</option>
-          <option value="dopatta_production">3. Dopatta Daily Production</option>
-          <option value="tana_production">4. Drum Master Tana Report</option>
-          <option value="noli_lachi_production">5. Noli / Endi Lachi Report</option>
-        </select>
-
-        <input type="date" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} style={{ padding: '8px' }} />
-
-        <button onClick={exportExcel} style={{ backgroundColor: '#1D6F42', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '4px', cursor: 'pointer' }}>
-          📥 Export Excel
-        </button>
-        <button onClick={exportPDF} style={{ backgroundColor: '#A61C1C', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '4px', cursor: 'pointer' }}>
-          📄 Export PDF
-        </button>
+    <div style={{ fontFamily: 'Arial', padding: '15px', backgroundColor: '#f4f6f9', minHeight: '100vh' }}>
+      {/* Top Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1F4E78', padding: '12px 20px', color: 'white', borderRadius: '6px' }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: '18px' }}>BRAC Sericulture Dashboard</h2>
+          <small>User: <strong>{user.user_id}</strong> ({user.role.toUpperCase()})</small>
+        </div>
+        <button onClick={handleLogout} style={{ padding: '6px 12px', backgroundColor: '#D32F2F', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Logout</button>
       </div>
 
-      <div style={{ overflowX: 'auto' }}>
-        <table border="1" cellPadding="8" style={{ borderCollapse: 'collapse', width: '100%' }}>
-          <thead>
-            <tr style={{ backgroundColor: '#1F4E78', color: 'white' }}>
-              {data.length > 0 && Object.keys(data[0]).map((key) => <th key={key}>{key}</th>)}
-            </tr>
-          </thead>
-          <tbody>
-            {data.map((row, idx) => (
-              <tr key={idx}>
-                {Object.values(row).map((val, i) => <td key={i}>{val}</td>)}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {/* Summary Widgets Row */}
+      <div style={{ marginTop: '15px' }}>
+        <h4 style={{ margin: '0 0 10px 0', color: '#1F4E78' }}>Today's Production Overview ({todayDate})</h4>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
+          
+          <div style={{ backgroundColor: 'white', padding: '12px', borderRadius: '6px', borderLeft: '4px solid #2F5597', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
+            <span style={{ fontSize: '12px', color: '#666' }}>Saree Production</span>
+            <h3 style={{ margin: '5px 0 0 0', color: '#1F4E78' }}>{todayStats.sareeProd} Pcs</h3>
+            <small style={{ color: '#555' }}>Noli Use: {todayStats.sareeNoli}</small>
+          </div>
+
+          <div style={{ backgroundColor: 'white', padding: '12px', borderRadius: '6px', borderLeft: '4px solid #2E7D32', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
+            <span style={{ fontSize: '12px', color: '#666' }}>Dopatta Production</span>
+            <h3 style={{ margin: '5px 0 0 0', color: '#2E7D32' }}>{todayStats.dopattaProd} Pcs</h3>
+            <small style={{ color: '#555' }}>Noli Use: {todayStats.dopattaNoli}</small>
+          </div>
+
+          <div style={{ backgroundColor: 'white', padding: '12px', borderRadius: '6px', borderLeft: '4px solid #ED6C02', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
+            <span style={{ fontSize: '12px', color: '#666' }}>Tana Production</span>
+            <h3 style={{ margin: '5px 0 0 0', color: '#ED6C02' }}>{todayStats.tanaProd}</h3>
+            <small style={{ color: '#555' }}>Yarn Use: {todayStats.yarnUse}</small>
+          </div>
+
+          <div style={{ backgroundColor: 'white', padding: '12px', borderRadius: '6px', borderLeft: '4px solid #9C27B0', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
+            <span style={{ fontSize: '12px', color: '#666' }}>Spinner Visits Today</span>
+            <h3 style={{ margin: '5px 0 0 0', color: '#9C27B0' }}>{todayStats.spinnersTotal}</h3>
+            <small style={{ color: '#555' }}>Active: {todayStats.spinnersActive} | New: {todayStats.spinnersNew} | Inactive: {todayStats.spinnersInactive}</small>
+          </div>
+
+        </div>
+      </div>
+
+      {/* Module Navigation Tabs */}
+      <div style={{ display: 'flex', gap: '5px', marginTop: '20px', flexWrap: 'wrap' }}>
+        {canAccess('saree') && <button onClick={() => setActiveTab('saree')} style={{ padding: '8px 12px', backgroundColor: activeTab === 'saree' ? '#1F4E78' : '#ddd', color: activeTab === 'saree' ? 'white' : 'black', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Saree Form</button>}
+        {canAccess('dopatta') && <button onClick={() => setActiveTab('dopatta')} style={{ padding: '8px 12px', backgroundColor: activeTab === 'dopatta' ? '#1F4E78' : '#ddd', color: activeTab === 'dopatta' ? 'white' : 'black', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Dopatta Form</button>}
+        {canAccess('tana') && <button onClick={() => setActiveTab('tana')} style={{ padding: '8px 12px', backgroundColor: activeTab === 'tana' ? '#1F4E78' : '#ddd', color: activeTab === 'tana' ? 'white' : 'black', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Tana Form</button>}
+        {canAccess('noli_lachi') && <button onClick={() => setActiveTab('noli_lachi')} style={{ padding: '8px 12px', backgroundColor: activeTab === 'noli_lachi' ? '#1F4E78' : '#ddd', color: activeTab === 'noli_lachi' ? 'white' : 'black', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Noli & Endi Lachi Form</button>}
+      </div>
+
+      {/* Dynamic Form Render */}
+      <div style={{ backgroundColor: 'white', padding: '15px', borderRadius: '6px', marginTop: '10px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
+        {activeTab === 'saree' && <ProductionReportForm type="saree" onSaved={fetchTodaySummary} />}
+        {activeTab === 'dopatta' && <ProductionReportForm type="dopatta" onSaved={fetchTodaySummary} />}
+        {activeTab === 'noli_lachi' && <NoliLachiReportForm onSaved={fetchTodaySummary} />}
+        {activeTab === 'summary' && <p style={{ color: '#666' }}>উপরের বাটনে ক্লিক করে পছন্দমতো ফরমের ইনপুট দিন।</p>}
       </div>
     </div>
   );
