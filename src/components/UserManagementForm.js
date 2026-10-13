@@ -6,7 +6,7 @@ export default function UserManagementForm() {
   const [newUserId, setNewUserId] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newRole, setNewRole] = useState('saree');
-  const [editingId, setEditingId] = useState(null);
+  const [editingUserId, setEditingUserId] = useState(null);
   const [editPassword, setEditPassword] = useState('');
   const [editRole, setEditRole] = useState('');
   const [loading, setLoading] = useState(false);
@@ -16,8 +16,10 @@ export default function UserManagementForm() {
   }, []);
 
   const fetchUsers = async () => {
-    const { data } = await supabase.from('app_users').select('*').order('created_at', { ascending: true });
-    if (data) setUsers(data);
+    const { data, error } = await supabase.from('app_users').select('*');
+    if (!error && data) {
+      setUsers(data);
+    }
   };
 
   const handleCreateUser = async (e) => {
@@ -36,37 +38,41 @@ export default function UserManagementForm() {
       alert('User created successfully!');
       setNewUserId('');
       setNewPassword('');
-      fetchUsers();
+      fetchUsers(); // Refresh list immediately
     }
   };
 
   const startEdit = (user) => {
-    setEditingId(user.id);
+    setEditingUserId(user.user_id);
     setEditPassword(user.password);
     setEditRole(user.role);
   };
 
-  const saveEdit = async (id) => {
+  const saveEdit = async (userId) => {
     setLoading(true);
     const { error } = await supabase
       .from('app_users')
       .update({ password: editPassword.trim(), role: editRole })
-      .eq('id', id);
+      .eq('user_id', userId);
 
     setLoading(false);
     if (error) {
       alert('Error updating user: ' + error.message);
     } else {
       alert('User updated successfully!');
-      setEditingId(null);
+      setEditingUserId(null);
       fetchUsers();
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete this user?')) return;
-    const { error } = await supabase.from('app_users').delete().eq('id', id);
-    if (!error) fetchUsers();
+  const handleDelete = async (userId) => {
+    if (!confirm(`Are you sure you want to delete ${userId}?`)) return;
+    const { error } = await supabase.from('app_users').delete().eq('user_id', userId);
+    if (!error) {
+      fetchUsers();
+    } else {
+      alert('Error deleting user: ' + error.message);
+    }
   };
 
   return (
@@ -96,7 +102,7 @@ export default function UserManagementForm() {
           <option value="admin">Admin Access</option>
         </select>
         <button type="submit" disabled={loading} style={{ padding: '8px 16px', backgroundColor: '#2E7D32', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>
-          ➕ Create User
+          {loading ? 'Creating...' : '➕ Create User'}
         </button>
       </form>
 
@@ -113,48 +119,52 @@ export default function UserManagementForm() {
             </tr>
           </thead>
           <tbody>
-            {users.map((u, i) => (
-              <tr key={u.id}>
-                <td>{i + 1}</td>
-                <td><strong>{u.user_id}</strong></td>
-                <td>
-                  {editingId === u.id ? (
-                    <input 
-                      type="text" 
-                      value={editPassword} 
-                      onChange={(e) => setEditPassword(e.target.value)} 
-                      style={{ padding: '4px', width: '120px' }} 
-                    />
-                  ) : (
-                    <span>{u.password}</span>
-                  )}
-                </td>
-                <td>
-                  {editingId === u.id ? (
-                    <select value={editRole} onChange={(e) => setEditRole(e.target.value)} style={{ padding: '4px' }}>
-                      <option value="saree">saree</option>
-                      <option value="dopatta">dopatta</option>
-                      <option value="tana">tana</option>
-                      <option value="noli_lachi">noli_lachi</option>
-                      <option value="charka">charka</option>
-                      <option value="admin">admin</option>
-                    </select>
-                  ) : (
-                    <span style={{ backgroundColor: '#0288D1', color: 'white', padding: '2px 6px', borderRadius: '4px', fontSize: '12px' }}>{u.role.toUpperCase()}</span>
-                  )}
-                </td>
-                <td>
-                  {editingId === u.id ? (
-                    <button onClick={() => saveEdit(u.id)} style={{ padding: '4px 8px', backgroundColor: '#2E7D32', color: 'white', border: 'none', borderRadius: '4px', marginRight: '5px', cursor: 'pointer' }}>💾 Save</button>
-                  ) : (
-                    <button onClick={() => startEdit(u)} style={{ padding: '4px 8px', backgroundColor: '#ED6C02', color: 'white', border: 'none', borderRadius: '4px', marginRight: '5px', cursor: 'pointer' }}>✏️ Edit</button>
-                  )}
-                  {u.user_id !== 'admin' && (
-                    <button onClick={() => handleDelete(u.id)} style={{ padding: '4px 8px', backgroundColor: '#D32F2F', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>❌ Delete</button>
-                  )}
-                </td>
-              </tr>
-            ))}
+            {users.length === 0 ? (
+              <tr><td colSpan="5" style={{ textAlign: 'center' }}>No users found in database.</td></tr>
+            ) : (
+              users.map((u, i) => (
+                <tr key={u.user_id || i}>
+                  <td>{i + 1}</td>
+                  <td><strong>{u.user_id}</strong></td>
+                  <td>
+                    {editingUserId === u.user_id ? (
+                      <input 
+                        type="text" 
+                        value={editPassword} 
+                        onChange={(e) => setEditPassword(e.target.value)} 
+                        style={{ padding: '4px', width: '120px' }} 
+                      />
+                    ) : (
+                      <span>{u.password}</span>
+                    )}
+                  </td>
+                  <td>
+                    {editingUserId === u.user_id ? (
+                      <select value={editRole} onChange={(e) => setEditRole(e.target.value)} style={{ padding: '4px' }}>
+                        <option value="saree">saree</option>
+                        <option value="dopatta">dopatta</option>
+                        <option value="tana">tana</option>
+                        <option value="noli_lachi">noli_lachi</option>
+                        <option value="charka">charka</option>
+                        <option value="admin">admin</option>
+                      </select>
+                    ) : (
+                      <span style={{ backgroundColor: '#0288D1', color: 'white', padding: '2px 6px', borderRadius: '4px', fontSize: '12px' }}>{u.role ? u.role.toUpperCase() : ''}</span>
+                    )}
+                  </td>
+                  <td>
+                    {editingUserId === u.user_id ? (
+                      <button onClick={() => saveEdit(u.user_id)} style={{ padding: '4px 8px', backgroundColor: '#2E7D32', color: 'white', border: 'none', borderRadius: '4px', marginRight: '5px', cursor: 'pointer' }}>💾 Save</button>
+                    ) : (
+                      <button onClick={() => startEdit(u)} style={{ padding: '4px 8px', backgroundColor: '#ED6C02', color: 'white', border: 'none', borderRadius: '4px', marginRight: '5px', cursor: 'pointer' }}>✏️ Edit</button>
+                    )}
+                    {u.user_id !== 'admin' && (
+                      <button onClick={() => handleDelete(u.user_id)} style={{ padding: '4px 8px', backgroundColor: '#D32F2F', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>❌ Delete</button>
+                    )}
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
