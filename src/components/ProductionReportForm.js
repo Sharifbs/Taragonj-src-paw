@@ -144,7 +144,6 @@ export default function ProductionReportForm({ type, onSaved }) {
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
-  // Total summary calculation
   const totalTarget = historyData.reduce((acc, curr) => acc + Number(curr.target || 0), 0);
   const totalProd = historyData.reduce((acc, curr) => acc + Number(curr.production || 0), 0);
   const totalNoliTarget = historyData.reduce((acc, curr) => acc + Number(curr.noli_target || 0), 0);
@@ -182,7 +181,7 @@ export default function ProductionReportForm({ type, onSaved }) {
         }
       `}</style>
 
-      {/* Action Mode Buttons */}
+      {/* Navigation Buttons */}
       <div className="no-print" style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
         <button onClick={() => setViewMode('entry')} style={{ padding: '8px 16px', backgroundColor: viewMode === 'entry' ? '#1F4E78' : '#e0e0e0', color: viewMode === 'entry' ? 'white' : 'black', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
           ➕ Daily Data Entry
@@ -260,7 +259,6 @@ export default function ProductionReportForm({ type, onSaved }) {
           </div>
         </div>
       ) : (
-        /* History & Grouped Header PDF Printable View */
         <div>
           <div className="no-print" style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap' }}>
             <label><strong>From:</strong></label>
@@ -286,7 +284,6 @@ export default function ProductionReportForm({ type, onSaved }) {
             </div>
           )}
 
-          {/* Standard PDF Header */}
           <div className="print-header">
             <h1 style={{ margin: 0, color: '#1F4E78', fontSize: '24px' }}>BRAC Sericulture Enterprise</h1>
             <h3 style={{ margin: '4px 0', color: '#555', fontSize: '16px' }}>Taragonj Silk Production Center</h3>
@@ -330,7 +327,6 @@ export default function ProductionReportForm({ type, onSaved }) {
                           <td>{r.noli_production}</td>
                         </tr>
                       ))}
-                      {/* Summary Row */}
                       <tr style={{ backgroundColor: '#f0f4f8', fontWeight: 'bold' }}>
                         <td colSpan="3" style={{ textAlign: 'right' }}>Total Summary:</td>
                         <td>{totalTarget}</td>

@@ -1,66 +1,50 @@
-import { useState } from 'react';
-import { supabase } from '../../lib/supabaseClient';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
+import ProductionReportForm from '../../components/ProductionReportForm';
 
 export default function TanaPage() {
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [rows, setRows] = useState(
-    Array.from({ length: 10 }, (_, i) => ({
-      sl_no: i + 1, dram_master_name: '', target: '', production: '', yarn_target: '', yarn_production: ''
-    }))
-  );
+  const [user, setUser] = useState(null);
+  const router = useRouter();
 
-  const handleInputChange = (i, field, val) => {
-    const updated = [...rows];
-    updated[i][field] = val;
-    setRows(updated);
+  useEffect(() => {
+    const session = localStorage.getItem('user_session');
+    if (!session) {
+      router.push('/');
+      return;
+    }
+    const parsedUser = JSON.parse(session);
+    if (parsedUser.role !== 'tana' && parsedUser.role !== 'admin') {
+      router.push('/');
+      return;
+    }
+    setUser(parsedUser);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('user_session');
+    router.push('/');
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const dataToInsert = rows.filter(r => r.dram_master_name.trim() !== '').map(r => ({
-      date, sl_no: r.sl_no, dram_master_name: r.dram_master_name,
-      target: parseFloat(r.target || 0), production: parseFloat(r.production || 0),
-      yarn_target: parseFloat(r.yarn_target || 0), yarn_production: parseFloat(r.yarn_production || 0)
-    }));
-    const { error } = await supabase.from('tana_production').insert(dataToInsert);
-    if (error) alert('Error: ' + error.message);
-    else alert('Drum Master Tana Report Saved!');
-  };
+  if (!user) return <div style={{ padding: '20px', textAlign: 'center' }}>Loading...</div>;
 
   return (
-    <div style={{ padding: '15px', fontFamily: 'Arial' }}>
-      <h3 style={{ textAlign: 'center', color: '#1F4E78' }}>Daily Production Report (Tana & Yarn Use)</h3>
-      <div style={{ marginBottom: '10px' }}>
-        <label><strong>Date: </strong></label>
-        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={{ padding: '5px' }} />
-      </div>
-      <form onSubmit={handleSubmit}>
-        <div style={{ overflowX: 'auto' }}>
-          <table border="1" cellPadding="5" style={{ borderCollapse: 'collapse', width: '100%' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#1F4E78', color: 'white' }}>
-                <th rowSpan="2">SL</th><th rowSpan="2">Dram Master Name</th><th colSpan="2">Tana</th><th colSpan="2">Yarn Use</th>
-              </tr>
-              <tr style={{ backgroundColor: '#2F5597', color: 'white' }}>
-                <th>Target</th><th>Production</th><th>Target</th><th>Production</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r, i) => (
-                <tr key={i}>
-                  <td style={{ textAlign: 'center' }}>{r.sl_no}</td>
-                  <td><input type="text" value={r.dram_master_name} onChange={(e) => handleInputChange(i, 'dram_master_name', e.target.value)} style={{ width: '100%' }} /></td>
-                  <td><input type="number" value={r.target} onChange={(e) => handleInputChange(i, 'target', e.target.value)} style={{ width: '100%' }} /></td>
-                  <td><input type="number" value={r.production} onChange={(e) => handleInputChange(i, 'production', e.target.value)} style={{ width: '100%' }} /></td>
-                  <td><input type="number" value={r.yarn_target} onChange={(e) => handleInputChange(i, 'yarn_target', e.target.value)} style={{ width: '100%' }} /></td>
-                  <td><input type="number" value={r.yarn_production} onChange={(e) => handleInputChange(i, 'yarn_production', e.target.value)} style={{ width: '100%' }} /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+    <div style={{ fontFamily: 'Arial, sans-serif', padding: '15px', backgroundColor: '#f4f6f9', minHeight: '100vh' }}>
+      <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1F4E78', padding: '12px 20px', color: 'white', borderRadius: '6px', marginBottom: '20px' }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: '18px' }}>BRAC Sericulture (Taragonj SRC)</h2>
+          <small>Logged in as: <strong>{user.user_id}</strong> (Tana Module)</small>
         </div>
-        <button type="submit" style={{ marginTop: '15px', width: '100%', padding: '10px', backgroundColor: '#2E7D32', color: 'white', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}>Save Report</button>
-      </form>
+        <button onClick={handleLogout} style={{ padding: '6px 14px', backgroundColor: '#D32F2F', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
+          Logout
+        </button>
+      </div>
+
+      <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+        <h3 className="no-print" style={{ color: '#1F4E78', marginTop: 0, marginBottom: '15px', borderBottom: '2px solid #1F4E78', paddingBottom: '8px' }}>
+          Daily Tana Production Entry
+        </h3>
+        <ProductionReportForm type="tana" />
+      </div>
     </div>
   );
 }

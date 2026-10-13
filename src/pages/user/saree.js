@@ -29,11 +29,10 @@ export default function SareePage() {
 
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', padding: '15px', backgroundColor: '#f4f6f9', minHeight: '100vh' }}>
-      {/* Top Header Bar with User Display & Logout */}
       <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1F4E78', padding: '12px 20px', color: 'white', borderRadius: '6px', marginBottom: '20px' }}>
         <div>
           <h2 style={{ margin: 0, fontSize: '18px' }}>BRAC Sericulture (Taragonj SRC)</h2>
-          <small>Logged in as: <strong>{user.user_id}</strong> ({user.role.toUpperCase()} Module)</small>
+          <small>Logged in as: <strong>{user.user_id}</strong> (Saree Module)</small>
         </div>
         <button onClick={handleLogout} style={{ padding: '6px 14px', backgroundColor: '#D32F2F', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
           Logout
