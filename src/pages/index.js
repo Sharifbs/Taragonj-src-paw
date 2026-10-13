@@ -26,9 +26,13 @@ export default function Login() {
       return;
     }
 
-    // Save session in localStorage
     localStorage.setItem('user_session', JSON.stringify(data));
-    router.push('/dashboard');
+
+    if (data.role === 'admin') {
+      router.push('/admin/dashboard');
+    } else {
+      router.push(`/user/${data.role}`);
+    }
   };
 
   return (

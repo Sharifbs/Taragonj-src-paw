@@ -37,11 +37,11 @@ export default function ProductionReportForm({ type = 'saree', onSaved }) {
 
     if (validRows.length === 0) return alert('At least 1 Weaver Name is required!');
 
-    // 1. Save new names to master_workers table so they show in autocomplete next time
+    // Save auto-suggestion master names
     const newNames = validRows.map(r => ({ worker_name: r.weaver_name.trim(), role_type: 'weaver' }));
     await supabase.from('master_workers').upsert(newNames, { onConflict: 'worker_name' });
 
-    // 2. Save Production Data
+    // Save Data
     const dataToInsert = validRows.map((r) => ({
       date,
       sl_no: r.sl_no,
