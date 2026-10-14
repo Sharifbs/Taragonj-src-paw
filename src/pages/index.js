@@ -60,6 +60,9 @@ export default function Login() {
       case 'charka':
         router.push('/user/charka');
         break;
+      case 'attendance':
+        router.push('/user/attendance');
+        break;
       default:
         alert('No page assigned for this role!');
     }
