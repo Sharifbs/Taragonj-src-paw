@@ -6,6 +6,7 @@ import NoliLachiReportForm from '../../components/NoliLachiReportForm';
 import CharkaSpinnersForm from '../../components/CharkaSpinnersForm';
 import UserManagementForm from '../../components/UserManagementForm';
 import AttendanceReportForm from '../../components/AttendanceReportForm';
+import * as XLSX from 'xlsx';
 
 export default function AdminDashboard() {
   const today = new Date().toISOString().split('T')[0];
@@ -76,29 +77,25 @@ export default function AdminDashboard() {
     });
   };
 
-  // Built-in Native Master Excel Export (Without External Libraries)
+  // Admin Multi-Sheet Master Excel Export (using 'xlsx')
   const exportMasterExcel = async () => {
     const { data: saree } = await supabase.from('saree_production').select('*').gte('date', startDate).lte('date', endDate);
     const { data: dopatta } = await supabase.from('dopatta_production').select('*').gte('date', startDate).lte('date', endDate);
     const { data: tana } = await supabase.from('tana_production').select('*').gte('date', startDate).lte('date', endDate);
     const { data: noliLachi } = await supabase.from('noli_lachi_production').select('*').gte('date', startDate).lte('date', endDate);
     const { data: charka } = await supabase.from('charka_spinners').select('*').gte('date', startDate).lte('date', endDate);
+    const { data: attendance } = await supabase.from('attendance_records').select('*').gte('date', startDate).lte('date', endDate);
 
-    let csvContent = 'data:text/csv;charset=utf-8,Module,Date,Name/Spinner,Target/Cocoon,Prod/Noli,Status/Remarks\n';
+    const wb = XLSX.utils.book_new();
 
-    if (saree) saree.forEach(r => { csvContent += `Saree,${r.date},"${r.weaver_name}",${r.target},${r.production},Noli: ${r.noli_production}\n`; });
-    if (dopatta) dopatta.forEach(r => { csvContent += `Dopatta,${r.date},"${r.weaver_name}",${r.target},${r.production},Noli: ${r.noli_production}\n`; });
-    if (tana) tana.forEach(r => { csvContent += `Tana,${r.date},"${r.weaver_name}",${r.target},${r.production},Yarn: ${r.noli_production}\n`; });
-    if (noliLachi) noliLachi.forEach(r => { csvContent += `NoliLachi,${r.date},"${r.spinner_name}",${r.cocoon_target},${r.cocoon_prod},Noli: ${r.noli_prod}\n`; });
-    if (charka) charka.forEach(r => { csvContent += `Charka,${r.date},"${r.spinner_name}",-,-,Status: ${r.status}\n`; });
+    if (saree && saree.length > 0) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(saree), 'Saree Report');
+    if (dopatta && dopatta.length > 0) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dopatta), 'Dopatta Report');
+    if (tana && tana.length > 0) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(tana), 'Tana Report');
+    if (noliLachi && noliLachi.length > 0) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(noliLachi), 'Noli & Lachi');
+    if (charka && charka.length > 0) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(charka), 'Charka Report');
+    if (attendance && attendance.length > 0) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(attendance), 'Attendance Log');
 
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `BRAC_Master_Report_${startDate}_to_${endDate}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    XLSX.writeFile(wb, `BRAC_Master_Production_Report_${startDate}_to_${endDate}.xlsx`);
   };
 
   const handleLogout = () => {
@@ -119,9 +116,9 @@ export default function AdminDashboard() {
         <button onClick={handleLogout} style={{ padding: '6px 14px', backgroundColor: '#D32F2F', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Logout</button>
       </div>
 
-      {/* Summary Widgets */}
+      {/* Live Summary Widgets */}
       <div style={{ marginTop: '15px' }}>
-        <h4 style={{ margin: '0 0 10px 0', color: '#1F4E78' }}>Today's Live Production Summary</h4>
+        <h4 style={{ margin: '0 0 10px 0', color: '#1F4E78' }}>Today's Live Production & Attendance Summary</h4>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px' }}>
           <div style={{ backgroundColor: 'white', padding: '12px', borderRadius: '6px', borderLeft: '4px solid #2F5597', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
             <span style={{ fontSize: '11px', color: '#666' }}>Saree Prod</span>
@@ -155,7 +152,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Admin Date Range Export */}
+      {/* Admin Central Date Range Export Panel */}
       <div style={{ backgroundColor: '#E1F5FE', padding: '12px', borderRadius: '6px', marginTop: '15px', border: '1px solid #81D4FA' }}>
         <h4 style={{ margin: '0 0 8px 0', color: '#0277BD' }}>📊 Admin Master Report Export (Date Range)</h4>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -163,12 +160,12 @@ export default function AdminDashboard() {
           <span>to</span>
           <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} style={{ padding: '6px', borderRadius: '4px' }} />
           <button onClick={exportMasterExcel} style={{ padding: '8px 16px', backgroundColor: '#2E7D32', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>
-            📥 Download Master Excel (.csv)
+            📥 Download Multi-Sheet Master Excel (.xlsx)
           </button>
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Tab Controls */}
       <div style={{ display: 'flex', gap: '5px', marginTop: '15px', overflowX: 'auto', paddingBottom: '5px' }}>
         <button onClick={() => setActiveTab('saree')} style={{ padding: '8px 12px', backgroundColor: activeTab === 'saree' ? '#1F4E78' : '#ddd', color: activeTab === 'saree' ? 'white' : 'black', border: 'none', borderRadius: '4px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Saree Form</button>
         <button onClick={() => setActiveTab('dopatta')} style={{ padding: '8px 12px', backgroundColor: activeTab === 'dopatta' ? '#1F4E78' : '#ddd', color: activeTab === 'dopatta' ? 'white' : 'black', border: 'none', borderRadius: '4px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Dopatta Form</button>
@@ -179,7 +176,7 @@ export default function AdminDashboard() {
         <button onClick={() => setActiveTab('user_manage')} style={{ padding: '8px 12px', backgroundColor: activeTab === 'user_manage' ? '#2E7D32' : '#C8E6C9', color: activeTab === 'user_manage' ? 'white' : '#1B5E20', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer', whiteSpace: 'nowrap' }}>⚙️ Manage Users</button>
       </div>
 
-      {/* Tab Body */}
+      {/* Dynamic Tab Body */}
       <div style={{ backgroundColor: 'white', padding: '15px', borderRadius: '6px', marginTop: '10px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
         {activeTab === 'saree' && <ProductionReportForm type="saree" onSaved={fetchTodaySummary} />}
         {activeTab === 'dopatta' && <ProductionReportForm type="dopatta" onSaved={fetchTodaySummary} />}
