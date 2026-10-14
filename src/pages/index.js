@@ -66,10 +66,28 @@ export default function Login() {
   };
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#1F4E78', fontFamily: 'Arial' }}>
-      <form onSubmit={handleLogin} style={{ backgroundColor: 'white', padding: '30px', borderRadius: '8px', width: '320px', textAlign: 'center', boxShadow: '0 4px 10px rgba(0,0,0,0.15)' }}>
-        <h2 style={{ color: '#1F4E78', marginBottom: '5px' }}>BRAC Sericulture</h2>
-        <p style={{ fontSize: '13px', color: '#666', marginBottom: '20px' }}>Production Reporting Login</p>
+    <div style={{ 
+      display: 'flex', 
+      justifyContent: 'center', 
+      alignItems: 'center', 
+      height: '100vh', 
+      backgroundImage: `linear-gradient(rgba(15, 32, 67, 0.65), rgba(15, 32, 67, 0.65)), url('/Mulberry.JPG')`, 
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
+      fontFamily: 'Arial, sans-serif' 
+    }}>
+      <form onSubmit={handleLogin} style={{ 
+        backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+        padding: '35px 30px', 
+        borderRadius: '12px', 
+        width: '320px', 
+        textAlign: 'center', 
+        boxShadow: '0 10px 25px rgba(0,0,0,0.3)',
+        backdropFilter: 'blur(5px)'
+      }}>
+        <h2 style={{ color: '#1F4E78', marginBottom: '5px', fontSize: '24px' }}>BRAC Sericulture</h2>
+        <p style={{ fontSize: '13px', color: '#555', marginBottom: '25px', fontWeight: 'bold' }}>Production Reporting Login</p>
         
         <input 
           type="text" 
@@ -77,7 +95,7 @@ export default function Login() {
           value={userId} 
           onChange={(e) => setUserId(e.target.value)} 
           required 
-          style={{ width: '100%', padding: '10px', marginBottom: '12px', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box' }} 
+          style={{ width: '100%', padding: '12px', marginBottom: '15px', borderRadius: '6px', border: '1px solid #ccc', boxSizing: 'border-box', fontSize: '14px' }} 
         />
         
         <input 
@@ -86,10 +104,10 @@ export default function Login() {
           value={password} 
           onChange={(e) => setPassword(e.target.value)} 
           required 
-          style={{ width: '100%', padding: '10px', marginBottom: '20px', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box' }} 
+          style={{ width: '100%', padding: '12px', marginBottom: '22px', borderRadius: '6px', border: '1px solid #ccc', boxSizing: 'border-box', fontSize: '14px' }} 
         />
 
-        <button type="submit" disabled={loading} style={{ width: '100%', padding: '10px', backgroundColor: '#2E7D32', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>
+        <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', backgroundColor: '#2E7D32', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', transition: '0.3s' }}>
           {loading ? 'Authenticating...' : 'Login to Dashboard'}
         </button>
       </form>
