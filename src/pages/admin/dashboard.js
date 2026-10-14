@@ -100,6 +100,7 @@ export default function AdminDashboard() {
 
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', padding: '12px', backgroundColor: '#f4f6f9', minHeight: '100vh' }}>
+      {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1F4E78', padding: '12px 15px', color: 'white', borderRadius: '6px', flexWrap: 'wrap', gap: '10px' }}>
         <div>
           <h2 style={{ margin: 0, fontSize: '18px' }}>BRAC Sericulture Dashboard</h2>
@@ -108,8 +109,9 @@ export default function AdminDashboard() {
         <button onClick={handleLogout} style={{ padding: '6px 14px', backgroundColor: '#D32F2F', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Logout</button>
       </div>
 
+      {/* Summary Widgets */}
       <div style={{ marginTop: '15px' }}>
-        <h4 style={{ margin: '0 0 10px 0', color: '#1F4E78' }}>Today's Live Production Summary</h4>
+        <h4 style={{ margin: '0 0 10px 0', color: '#1F4E78' }}>Today's Live Production & Attendance Summary</h4>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px' }}>
           <div style={{ backgroundColor: 'white', padding: '12px', borderRadius: '6px', borderLeft: '4px solid #2F5597', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
             <span style={{ fontSize: '11px', color: '#666' }}>Saree Prod</span>
@@ -143,6 +145,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
+      {/* Admin Export Panel */}
       <div style={{ backgroundColor: '#E1F5FE', padding: '12px', borderRadius: '6px', marginTop: '15px', border: '1px solid #81D4FA' }}>
         <h4 style={{ margin: '0 0 8px 0', color: '#0277BD' }}>📊 Admin Master Report Export (Date Range)</h4>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -150,11 +153,12 @@ export default function AdminDashboard() {
           <span>to</span>
           <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} style={{ padding: '6px', borderRadius: '4px' }} />
           <button onClick={exportMasterExcel} style={{ padding: '8px 16px', backgroundColor: '#2E7D32', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>
-            📥 Download Master Excel (.xlsx)
+            📥 Download Multi-Sheet Master Excel (.xlsx)
           </button>
         </div>
       </div>
 
+      {/* Tab Controls */}
       <div style={{ display: 'flex', gap: '5px', marginTop: '15px', overflowX: 'auto', paddingBottom: '5px' }}>
         <button onClick={() => setActiveTab('saree')} style={{ padding: '8px 12px', backgroundColor: activeTab === 'saree' ? '#1F4E78' : '#ddd', color: activeTab === 'saree' ? 'white' : 'black', border: 'none', borderRadius: '4px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Saree Form</button>
         <button onClick={() => setActiveTab('dopatta')} style={{ padding: '8px 12px', backgroundColor: activeTab === 'dopatta' ? '#1F4E78' : '#ddd', color: activeTab === 'dopatta' ? 'white' : 'black', border: 'none', borderRadius: '4px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Dopatta Form</button>
@@ -165,6 +169,7 @@ export default function AdminDashboard() {
         <button onClick={() => setActiveTab('user_manage')} style={{ padding: '8px 12px', backgroundColor: activeTab === 'user_manage' ? '#2E7D32' : '#C8E6C9', color: activeTab === 'user_manage' ? 'white' : '#1B5E20', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer', whiteSpace: 'nowrap' }}>⚙️ Manage Users</button>
       </div>
 
+      {/* Dynamic Tab Body */}
       <div style={{ backgroundColor: 'white', padding: '15px', borderRadius: '6px', marginTop: '10px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
         {activeTab === 'saree' && <ProductionReportForm type="saree" onSaved={fetchTodaySummary} />}
         {activeTab === 'dopatta' && <ProductionReportForm type="dopatta" onSaved={fetchTodaySummary} />}
