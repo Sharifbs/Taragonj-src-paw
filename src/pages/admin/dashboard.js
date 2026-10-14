@@ -5,9 +5,8 @@ import ProductionReportForm from '../../components/ProductionReportForm';
 import NoliLachiReportForm from '../../components/NoliLachiReportForm';
 import CharkaSpinnersForm from '../../components/CharkaSpinnersForm';
 import UserManagementForm from '../../components/UserManagementForm';
+import AttendanceReportForm from '../../components/AttendanceReportForm';
 import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
 
 export default function AdminDashboard() {
   const today = new Date().toISOString().split('T')[0];
@@ -22,7 +21,8 @@ export default function AdminDashboard() {
     sareeProd: 0, sareeNoli: 0,
     dopattaProd: 0, dopattaNoli: 0,
     tanaProd: 0, yarnUse: 0,
-    spinnersActive: 0, spinnersNew: 0, spinnersInactive: 0, spinnersTotal: 0
+    spinnersActive: 0, spinnersNew: 0, spinnersInactive: 0, spinnersTotal: 0,
+    attPresent: 0, attAbsent: 0, attTotal: 0
   });
 
   const router = useRouter();
@@ -40,29 +40,40 @@ export default function AdminDashboard() {
   const fetchTodaySummary = async () => {
     const todayDate = new Date().toISOString().split('T')[0];
 
+    // Saree Summary
     const { data: saree } = await supabase.from('saree_production').select('production, noli_production').eq('date', todayDate);
     const sareeProd = saree?.reduce((sum, r) => sum + Number(r.production || 0), 0) || 0;
     const sareeNoli = saree?.reduce((sum, r) => sum + Number(r.noli_production || 0), 0) || 0;
 
+    // Dopatta Summary
     const { data: dopatta } = await supabase.from('dopatta_production').select('production, noli_production').eq('date', todayDate);
     const dopattaProd = dopatta?.reduce((sum, r) => sum + Number(r.production || 0), 0) || 0;
     const dopattaNoli = dopatta?.reduce((sum, r) => sum + Number(r.noli_production || 0), 0) || 0;
 
+    // Tana Summary
     const { data: tana } = await supabase.from('tana_production').select('production, noli_production').eq('date', todayDate);
     const tanaProd = tana?.reduce((sum, r) => sum + Number(r.production || 0), 0) || 0;
     const yarnUse = tana?.reduce((sum, r) => sum + Number(r.noli_production || 0), 0) || 0;
 
+    // Charka Summary
     const { data: spinners } = await supabase.from('charka_spinners').select('status').eq('date', todayDate);
     const spinnersActive = spinners?.filter(s => s.status === 'Active').length || 0;
     const spinnersNew = spinners?.filter(s => s.status === 'New').length || 0;
     const spinnersInactive = spinners?.filter(s => s.status === 'InActive').length || 0;
+
+    // Attendance Summary
+    const { data: attendance } = await supabase.from('attendance_records').select('status').eq('date', todayDate);
+    const attPresent = attendance?.filter(a => a.status === 'Present').length || 0;
+    const attAbsent = attendance?.filter(a => a.status === 'Absent').length || 0;
 
     setTodayStats({
       sareeProd, sareeNoli,
       dopattaProd, dopattaNoli,
       tanaProd, yarnUse,
       spinnersActive, spinnersNew, spinnersInactive,
-      spinnersTotal: spinners?.length || 0
+      spinnersTotal: spinners?.length || 0,
+      attPresent, attAbsent,
+      attTotal: attendance?.length || 0
     });
   };
 
@@ -71,13 +82,17 @@ export default function AdminDashboard() {
     const { data: saree } = await supabase.from('saree_production').select('*').gte('date', startDate).lte('date', endDate);
     const { data: dopatta } = await supabase.from('dopatta_production').select('*').gte('date', startDate).lte('date', endDate);
     const { data: tana } = await supabase.from('tana_production').select('*').gte('date', startDate).lte('date', endDate);
+    const { data: noliLachi } = await supabase.from('noli_lachi_production').select('*').gte('date', startDate).lte('date', endDate);
     const { data: charka } = await supabase.from('charka_spinners').select('*').gte('date', startDate).lte('date', endDate);
+    const { data: attendance } = await supabase.from('attendance_records').select('*').gte('date', startDate).lte('date', endDate);
 
     const wb = XLSX.utils.book_new();
-    if (saree) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(saree), 'Saree Report');
-    if (dopatta) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dopatta), 'Dopatta Report');
-    if (tana) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(tana), 'Tana Report');
-    if (charka) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(charka), 'Charka Report');
+    if (saree && saree.length > 0) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(saree), 'Saree Report');
+    if (dopatta && dopatta.length > 0) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dopatta), 'Dopatta Report');
+    if (tana && tana.length > 0) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(tana), 'Tana Report');
+    if (noliLachi && noliLachi.length > 0) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(noliLachi), 'Noli & Lachi');
+    if (charka && charka.length > 0) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(charka), 'Charka Report');
+    if (attendance && attendance.length > 0) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(attendance), 'Attendance Log');
 
     XLSX.writeFile(wb, `BRAC_Master_Production_Report_${startDate}_to_${endDate}.xlsx`);
   };
@@ -102,8 +117,8 @@ export default function AdminDashboard() {
 
       {/* Summary Widgets */}
       <div style={{ marginTop: '15px' }}>
-        <h4 style={{ margin: '0 0 10px 0', color: '#1F4E78' }}>Today's Live Production Summary</h4>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px' }}>
+        <h4 style={{ margin: '0 0 10px 0', color: '#1F4E78' }}>Today's Live Production & Attendance Summary</h4>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px' }}>
           <div style={{ backgroundColor: 'white', padding: '12px', borderRadius: '6px', borderLeft: '4px solid #2F5597', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
             <span style={{ fontSize: '11px', color: '#666' }}>Saree Prod</span>
             <h3 style={{ margin: '5px 0 0 0', color: '#1F4E78' }}>{todayStats.sareeProd} Pcs</h3>
@@ -126,6 +141,12 @@ export default function AdminDashboard() {
             <span style={{ fontSize: '11px', color: '#666' }}>Spinner Visits</span>
             <h3 style={{ margin: '5px 0 0 0', color: '#9C27B0' }}>{todayStats.spinnersTotal}</h3>
             <small style={{ color: '#555', fontSize: '10px' }}>Act: {todayStats.spinnersActive} | New: {todayStats.spinnersNew}</small>
+          </div>
+
+          <div style={{ backgroundColor: 'white', padding: '12px', borderRadius: '6px', borderLeft: '4px solid #009688', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
+            <span style={{ fontSize: '11px', color: '#666' }}>Today Attendance</span>
+            <h3 style={{ margin: '5px 0 0 0', color: '#009688' }}>{todayStats.attPresent} Present</h3>
+            <small style={{ color: '#555', fontSize: '10px' }}>Absent: {todayStats.attAbsent} | Total: {todayStats.attTotal}</small>
           </div>
         </div>
       </div>
@@ -150,6 +171,7 @@ export default function AdminDashboard() {
         <button onClick={() => setActiveTab('tana')} style={{ padding: '8px 12px', backgroundColor: activeTab === 'tana' ? '#1F4E78' : '#ddd', color: activeTab === 'tana' ? 'white' : 'black', border: 'none', borderRadius: '4px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Tana Form</button>
         <button onClick={() => setActiveTab('charka')} style={{ padding: '8px 12px', backgroundColor: activeTab === 'charka' ? '#1F4E78' : '#ddd', color: activeTab === 'charka' ? 'white' : 'black', border: 'none', borderRadius: '4px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Charka Form</button>
         <button onClick={() => setActiveTab('noli_lachi')} style={{ padding: '8px 12px', backgroundColor: activeTab === 'noli_lachi' ? '#1F4E78' : '#ddd', color: activeTab === 'noli_lachi' ? 'white' : 'black', border: 'none', borderRadius: '4px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Noli & Lachi Form</button>
+        <button onClick={() => setActiveTab('attendance')} style={{ padding: '8px 12px', backgroundColor: activeTab === 'attendance' ? '#1F4E78' : '#ddd', color: activeTab === 'attendance' ? 'white' : 'black', border: 'none', borderRadius: '4px', cursor: 'pointer', whiteSpace: 'nowrap' }}>📋 Attendance</button>
         <button onClick={() => setActiveTab('user_manage')} style={{ padding: '8px 12px', backgroundColor: activeTab === 'user_manage' ? '#2E7D32' : '#C8E6C9', color: activeTab === 'user_manage' ? 'white' : '#1B5E20', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer', whiteSpace: 'nowrap' }}>⚙️ Manage Users</button>
       </div>
 
@@ -160,6 +182,7 @@ export default function AdminDashboard() {
         {activeTab === 'tana' && <ProductionReportForm type="tana" onSaved={fetchTodaySummary} />}
         {activeTab === 'charka' && <CharkaSpinnersForm onSaved={fetchTodaySummary} />}
         {activeTab === 'noli_lachi' && <NoliLachiReportForm onSaved={fetchTodaySummary} />}
+        {activeTab === 'attendance' && <AttendanceReportForm onSaved={fetchTodaySummary} />}
         {activeTab === 'user_manage' && <UserManagementForm />}
       </div>
     </div>
