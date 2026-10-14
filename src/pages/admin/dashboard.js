@@ -12,7 +12,7 @@ export default function AdminDashboard() {
   const today = new Date().toISOString().split('T')[0];
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState('saree');
-  
+
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
 
@@ -54,7 +54,6 @@ export default function AdminDashboard() {
     const { data: spinners } = await supabase.from('charka_spinners').select('status').eq('date', todayDate);
     const spinnersActive = spinners?.filter(s => s.status === 'Active').length || 0;
     const spinnersNew = spinners?.filter(s => s.status === 'New').length || 0;
-    const spinnersInactive = spinners?.filter(s => s.status === 'InActive').length || 0;
 
     const { data: attendance } = await supabase.from('attendance_records').select('status').eq('date', todayDate);
     const attPresent = attendance?.filter(a => a.status === 'Present').length || 0;
@@ -64,7 +63,7 @@ export default function AdminDashboard() {
       sareeProd, sareeNoli,
       dopattaProd, dopattaNoli,
       tanaProd, yarnUse,
-      spinnersActive, spinnersNew, spinnersInactive,
+      spinnersActive, spinnersNew,
       spinnersTotal: spinners?.length || 0,
       attPresent, attAbsent,
       attTotal: attendance?.length || 0
@@ -81,12 +80,12 @@ export default function AdminDashboard() {
 
     const wb = XLSX.utils.book_new();
 
-    if (saree && saree.length > 0) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(saree), 'Saree Report');
-    if (dopatta && dopatta.length > 0) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dopatta), 'Dopatta Report');
-    if (tana && tana.length > 0) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(tana), 'Tana Report');
-    if (noliLachi && noliLachi.length > 0) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(noliLachi), 'Noli & Lachi');
-    if (charka && charka.length > 0) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(charka), 'Charka Report');
-    if (attendance && attendance.length > 0) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(attendance), 'Attendance Log');
+    if (saree?.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(saree), 'Saree Report');
+    if (dopatta?.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dopatta), 'Dopatta Report');
+    if (tana?.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(tana), 'Tana Report');
+    if (noliLachi?.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(noliLachi), 'Noli & Lachi');
+    if (charka?.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(charka), 'Charka Report');
+    if (attendance?.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(attendance), 'Attendance Log');
 
     XLSX.writeFile(wb, `BRAC_Master_Production_Report_${startDate}_to_${endDate}.xlsx`);
   };
@@ -165,7 +164,7 @@ export default function AdminDashboard() {
         <button onClick={() => setActiveTab('tana')} style={{ padding: '8px 12px', backgroundColor: activeTab === 'tana' ? '#1F4E78' : '#ddd', color: activeTab === 'tana' ? 'white' : 'black', border: 'none', borderRadius: '4px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Tana Form</button>
         <button onClick={() => setActiveTab('charka')} style={{ padding: '8px 12px', backgroundColor: activeTab === 'charka' ? '#1F4E78' : '#ddd', color: activeTab === 'charka' ? 'white' : 'black', border: 'none', borderRadius: '4px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Charka Form</button>
         <button onClick={() => setActiveTab('noli_lachi')} style={{ padding: '8px 12px', backgroundColor: activeTab === 'noli_lachi' ? '#1F4E78' : '#ddd', color: activeTab === 'noli_lachi' ? 'white' : 'black', border: 'none', borderRadius: '4px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Noli & Lachi Form</button>
-        <button onClick={() => setActiveTab('attendance')} style={{ padding: '8px 12px', backgroundColor: activeTab === 'attendance' ? '#1F4E78' : '#ddd', color: activeTab === 'attendance' ? 'white' : 'black', border: 'none', borderRadius: '4px', cursor: 'pointer', whiteSpace: 'nowrap', fontWeight: 'bold' }}>📋 Attendance</button>
+        <button onClick={() => setActiveTab('attendance')} style={{ padding: '8px 12px', backgroundColor: activeTab === 'attendance' ? '#D32F2F' : '#FFCDD2', color: activeTab === 'attendance' ? 'white' : '#B71C1C', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer', whiteSpace: 'nowrap' }}>📋 Attendance</button>
         <button onClick={() => setActiveTab('user_manage')} style={{ padding: '8px 12px', backgroundColor: activeTab === 'user_manage' ? '#2E7D32' : '#C8E6C9', color: activeTab === 'user_manage' ? 'white' : '#1B5E20', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer', whiteSpace: 'nowrap' }}>⚙️ Manage Users</button>
       </div>
 
