@@ -13,6 +13,7 @@ export default function AdminDashboard() {
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState('saree');
   
+  // Date range filter for Admin Reports
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
 
@@ -39,23 +40,28 @@ export default function AdminDashboard() {
   const fetchTodaySummary = async () => {
     const todayDate = new Date().toISOString().split('T')[0];
 
+    // Saree Summary
     const { data: saree } = await supabase.from('saree_production').select('production, noli_production').eq('date', todayDate);
     const sareeProd = saree?.reduce((sum, r) => sum + Number(r.production || 0), 0) || 0;
     const sareeNoli = saree?.reduce((sum, r) => sum + Number(r.noli_production || 0), 0) || 0;
 
+    // Dopatta Summary
     const { data: dopatta } = await supabase.from('dopatta_production').select('production, noli_production').eq('date', todayDate);
     const dopattaProd = dopatta?.reduce((sum, r) => sum + Number(r.production || 0), 0) || 0;
     const dopattaNoli = dopatta?.reduce((sum, r) => sum + Number(r.noli_production || 0), 0) || 0;
 
+    // Tana Summary
     const { data: tana } = await supabase.from('tana_production').select('production, noli_production').eq('date', todayDate);
     const tanaProd = tana?.reduce((sum, r) => sum + Number(r.production || 0), 0) || 0;
     const yarnUse = tana?.reduce((sum, r) => sum + Number(r.noli_production || 0), 0) || 0;
 
+    // Charka Summary
     const { data: spinners } = await supabase.from('charka_spinners').select('status').eq('date', todayDate);
     const spinnersActive = spinners?.filter(s => s.status === 'Active').length || 0;
     const spinnersNew = spinners?.filter(s => s.status === 'New').length || 0;
     const spinnersInactive = spinners?.filter(s => s.status === 'InActive').length || 0;
 
+    // Attendance Summary
     const { data: attendance } = await supabase.from('attendance_records').select('status').eq('date', todayDate);
     const attPresent = attendance?.filter(a => a.status === 'Present').length || 0;
     const attAbsent = attendance?.filter(a => a.status === 'Absent').length || 0;
@@ -71,6 +77,7 @@ export default function AdminDashboard() {
     });
   };
 
+  // Admin Central Date Range Master Excel Export
   const exportMasterExcel = async () => {
     const { data: saree } = await supabase.from('saree_production').select('*').gte('date', startDate).lte('date', endDate);
     const { data: dopatta } = await supabase.from('dopatta_production').select('*').gte('date', startDate).lte('date', endDate);
@@ -165,7 +172,7 @@ export default function AdminDashboard() {
         <button onClick={() => setActiveTab('tana')} style={{ padding: '8px 12px', backgroundColor: activeTab === 'tana' ? '#1F4E78' : '#ddd', color: activeTab === 'tana' ? 'white' : 'black', border: 'none', borderRadius: '4px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Tana Form</button>
         <button onClick={() => setActiveTab('charka')} style={{ padding: '8px 12px', backgroundColor: activeTab === 'charka' ? '#1F4E78' : '#ddd', color: activeTab === 'charka' ? 'white' : 'black', border: 'none', borderRadius: '4px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Charka Form</button>
         <button onClick={() => setActiveTab('noli_lachi')} style={{ padding: '8px 12px', backgroundColor: activeTab === 'noli_lachi' ? '#1F4E78' : '#ddd', color: activeTab === 'noli_lachi' ? 'white' : 'black', border: 'none', borderRadius: '4px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Noli & Lachi Form</button>
-        <button onClick={() => setActiveTab('attendance')} style={{ padding: '8px 12px', backgroundColor: activeTab === 'attendance' ? '#1F4E78' : '#ddd', color: activeTab === 'attendance' ? 'white' : 'black', border: 'none', borderRadius: '4px', cursor: 'pointer', whiteSpace: 'nowrap' }}>📋 Attendance</button>
+        <button onClick={() => setActiveTab('attendance')} style={{ padding: '8px 12px', backgroundColor: activeTab === 'attendance' ? '#1F4E78' : '#ddd', color: activeTab === 'attendance' ? 'white' : 'black', border: 'none', borderRadius: '4px', cursor: 'pointer', whiteSpace: 'nowrap', fontWeight: 'bold' }}>📋 Attendance</button>
         <button onClick={() => setActiveTab('user_manage')} style={{ padding: '8px 12px', backgroundColor: activeTab === 'user_manage' ? '#2E7D32' : '#C8E6C9', color: activeTab === 'user_manage' ? 'white' : '#1B5E20', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer', whiteSpace: 'nowrap' }}>⚙️ Manage Users</button>
       </div>
 
