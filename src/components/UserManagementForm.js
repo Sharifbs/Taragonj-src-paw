@@ -99,6 +99,7 @@ export default function UserManagementForm() {
           <option value="tana">Tana Module</option>
           <option value="noli_lachi">Noli & Lachi Module</option>
           <option value="charka">Charka Spinners Module</option>
+          <option value="attendance">Attendance Module</option>
           <option value="admin">Admin Access</option>
         </select>
         <button type="submit" disabled={loading} style={{ padding: '8px 16px', backgroundColor: '#2E7D32', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>
@@ -146,10 +147,20 @@ export default function UserManagementForm() {
                         <option value="tana">tana</option>
                         <option value="noli_lachi">noli_lachi</option>
                         <option value="charka">charka</option>
+                        <option value="attendance">attendance</option>
                         <option value="admin">admin</option>
                       </select>
                     ) : (
-                      <span style={{ backgroundColor: '#0288D1', color: 'white', padding: '2px 6px', borderRadius: '4px', fontSize: '12px' }}>{u.role ? u.role.toUpperCase() : ''}</span>
+                      <span style={{ 
+                        backgroundColor: u.role === 'admin' ? '#D32F2F' : u.role === 'attendance' ? '#2E7D32' : '#0288D1', 
+                        color: 'white', 
+                        padding: '2px 6px', 
+                        borderRadius: '4px', 
+                        fontSize: '12px',
+                        fontWeight: 'bold'
+                      }}>
+                        {u.role ? u.role.toUpperCase() : ''}
+                      </span>
                     )}
                   </td>
                   <td>
