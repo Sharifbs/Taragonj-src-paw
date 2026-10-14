@@ -13,7 +13,6 @@ export default function AdminDashboard() {
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState('saree');
   
-  // Date range filter for Admin Reports
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
 
@@ -40,28 +39,23 @@ export default function AdminDashboard() {
   const fetchTodaySummary = async () => {
     const todayDate = new Date().toISOString().split('T')[0];
 
-    // Saree Summary
     const { data: saree } = await supabase.from('saree_production').select('production, noli_production').eq('date', todayDate);
     const sareeProd = saree?.reduce((sum, r) => sum + Number(r.production || 0), 0) || 0;
     const sareeNoli = saree?.reduce((sum, r) => sum + Number(r.noli_production || 0), 0) || 0;
 
-    // Dopatta Summary
     const { data: dopatta } = await supabase.from('dopatta_production').select('production, noli_production').eq('date', todayDate);
     const dopattaProd = dopatta?.reduce((sum, r) => sum + Number(r.production || 0), 0) || 0;
     const dopattaNoli = dopatta?.reduce((sum, r) => sum + Number(r.noli_production || 0), 0) || 0;
 
-    // Tana Summary
     const { data: tana } = await supabase.from('tana_production').select('production, noli_production').eq('date', todayDate);
     const tanaProd = tana?.reduce((sum, r) => sum + Number(r.production || 0), 0) || 0;
     const yarnUse = tana?.reduce((sum, r) => sum + Number(r.noli_production || 0), 0) || 0;
 
-    // Charka Summary
     const { data: spinners } = await supabase.from('charka_spinners').select('status').eq('date', todayDate);
     const spinnersActive = spinners?.filter(s => s.status === 'Active').length || 0;
     const spinnersNew = spinners?.filter(s => s.status === 'New').length || 0;
     const spinnersInactive = spinners?.filter(s => s.status === 'InActive').length || 0;
 
-    // Attendance Summary
     const { data: attendance } = await supabase.from('attendance_records').select('status').eq('date', todayDate);
     const attPresent = attendance?.filter(a => a.status === 'Present').length || 0;
     const attAbsent = attendance?.filter(a => a.status === 'Absent').length || 0;
@@ -77,7 +71,6 @@ export default function AdminDashboard() {
     });
   };
 
-  // Admin Central Date Range Master Excel Export
   const exportMasterExcel = async () => {
     const { data: saree } = await supabase.from('saree_production').select('*').gte('date', startDate).lte('date', endDate);
     const { data: dopatta } = await supabase.from('dopatta_production').select('*').gte('date', startDate).lte('date', endDate);
